@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishSingleFile>true</PublishSingleFile>
+    <RootNamespace>Crypto_LP_Compounder</RootNamespace>
+    <Copyright>Copyright © lwYeo 2021</Copyright>
+    <Company>lwYeo@github</Company>
+    <Authors>lwYeo</Authors>
+    <Version>0.1.0</Version>
+    <RepositoryType>GitHub</RepositoryType>
+    <RepositoryUrl>https://github.com/lwYeo/CryptoLP_Compounder</RepositoryUrl>
+    <Product>Crypto LP Compounder</Product>
+    <PackageId>Crypto_LP_Compounder</PackageId>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Nethereum.Web3" Version="3.8.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Crypto Crypt">
+      <HintPath>Crypto Crypt.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

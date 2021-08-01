@@ -1,0 +1,37 @@
+{
+  "RPC_URL": "https://rpc.fantom.network/",
+  "RPC_Timeout": 120,
+  "GasPriceOffsetGwei": 0.0,
+  "FixedGasPriceGwei": 0.0,
+  "MinGasPriceGwei": 0.0,
+  "WETH_Contract": "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",//WFTM
+  "USD_Contract": "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",//USDC
+  "USD_Decimals": 6,
+  "Wallet": {
+    "Address": "0xYOUR_ADDRESS",//Your wallet address
+    "PrivateKeyCrypt": ""//Do not fill this up as this is encrypted, the app will ask for your private key instead
+  },
+  "LiquidityPool": {
+    "TokenA_Contract": "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",//WFTM
+    "TokenA_Decimals": 18,
+    "TokenB_Contract": "0xD3b71117E6C1558c1553305b44988cd944e97300",//YEL
+    "TokenB_Decimals": 18,
+    "LP_Contract": "0x8BFf7b8B6a14e576a3634d6c0466A19A6E9b170a",//WFTM-YEL LP
+    "LP_Decimals": 18,
+    "FactoryContract": "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3",//Spooky Factory
+    "RouterContract": "0xF491e7B69E4244ad4002BC14e878a34207E38c29",//Spooky Router
+    "Slippage": 2.0,
+    "TokenA_Offset": 0.0,
+    "TokenB_Offset": 0.0,
+    "ZapContract": "",
+    "TaxFreeContract": ""
+  },
+  "Farm": {
+    "FarmType": "YEL",
+    "FarmContract": "0x954b15065e4FA1243Cd45a020766511b68Ea9b6E",//YEL pool
+    "RewardContract": "0xD3b71117E6C1558c1553305b44988cd944e97300",//YEL
+    "RewardDecimals": 18,
+    "FarmPoolID": 1,
+    "ProcessAllRewards": false
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "RPC_URL": "",
+  "RPC_Timeout": 120,
+  "GasPriceOffsetGwei": 0.0,
+  "FixedGasPriceGwei": 0.0,
+  "MinGasPriceGwei": 0.0,
+  "WETH_Contract": "",
+  "USD_Contract": "",
+  "USD_Decimals": 6,
+  "Wallet": {
+    "Address": "",
+    "PrivateKeyCrypt": ""
+  },
+  "LiquidityPool": {
+    "TokenA_Contract": "",
+    "TokenA_Decimals": 18,
+    "TokenB_Contract": "",
+    "TokenB_Decimals": 18,
+    "LP_Contract": "",
+    "LP_Decimals": 18,
+    "FactoryContract": "",
+    "RouterContract": "",
+    "Slippage": 2.0,
+    "TokenA_Offset": 0.0,
+    "TokenB_Offset": 0.0,
+    "ZapContract": "",
+    "TaxFreeContract": ""
+  },
+  "Farm": {
+    "FarmType": "",
+    "FarmContract": "",
+    "RewardContract": "",
+    "RewardDecimals": 18,
+    "FarmPoolID": 0,
+    "ProcessAllRewards": true
+  }
+}
