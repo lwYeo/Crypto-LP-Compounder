@@ -96,7 +96,8 @@ namespace Crypto_LP_Compounder
 
             await WaitForLogsToFlush();
 
-            SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), originalConsoleMode);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), originalConsoleMode);
 
             _FlushCompleteEvent.Set();
         }
@@ -161,18 +162,13 @@ namespace Crypto_LP_Compounder
 
                                 _ConsoleLogQueue.Enqueue(log);
 
+                                logStream.Write(log);
+                                logStream.Flush();
+
                                 if (isLogCompoundProcess)
                                 {
                                     logProcessStream.Write(log);
-                                    logStream.Write(log);
-
                                     logProcessStream.Flush();
-                                    logStream.Flush();
-                                }
-                                else
-                                {
-                                    logStream.Write(log);
-                                    logStream.Flush();
                                 }
                             }
                         }
