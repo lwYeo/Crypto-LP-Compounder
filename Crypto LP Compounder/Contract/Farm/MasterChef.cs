@@ -440,14 +440,14 @@ namespace Crypto_LP_Compounder.Contract.Farm
                     (userDepositAmtEthTask.Result * tokenBInLPEthTask.Result / (tokenAInLPEthTask.Result + tokenBInLPEthTask.Result));
 
                 Program.WriteLineLog("Underlying Token A value: {0:n10} ({1:n2} USD / {2:n10} ETH)",
-                    (decimal)underlyingTokenAEth,
-                    (decimal)(underlyingTokenAEth / tokenValueAEthTask.Result * ethToUsdTask.Result),
-                    (decimal)(underlyingTokenAEth / tokenValueAEthTask.Result));
+                    (decimal)(underlyingTokenAEth / tokenValueAEthTask.Result),
+                    (decimal)(underlyingTokenAEth * ethToUsdTask.Result),
+                    (decimal)underlyingTokenAEth);
 
                 Program.WriteLineLog("Underlying Token B value: {0:n10} ({1:n2} USD / {2:n10} ETH)",
-                    (decimal)underlyingTokenBEth,
-                    (decimal)(underlyingTokenBEth / tokenValueAEthTask.Result * ethToUsdTask.Result),
-                    (decimal)(underlyingTokenBEth / tokenValueAEthTask.Result));
+                    (decimal)(underlyingTokenBEth / tokenValueBEthTask.Result),
+                    (decimal)(underlyingTokenBEth * ethToUsdTask.Result),
+                    (decimal)underlyingTokenBEth);
             }
             catch (Exception ex)
             {
