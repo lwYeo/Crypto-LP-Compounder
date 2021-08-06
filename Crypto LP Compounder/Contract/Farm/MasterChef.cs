@@ -334,8 +334,8 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
                 Program.WriteLineLog("{0:n10} ({1:n2} USD / {2:n10} ETH)",
                     (decimal)pendingReward.Result,
-                    (decimal)(pendingReward.Result * rewardValueEth.Result),
-                    (decimal)(pendingReward.Result * rewardValueEth.Result * ethToUsdTask.Result));
+                    (decimal)(pendingReward.Result * rewardValueEth.Result * ethToUsdTask.Result),
+                    (decimal)(pendingReward.Result * rewardValueEth.Result));
             }
             catch (Exception ex)
             {
