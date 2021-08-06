@@ -30,7 +30,8 @@ If you like this project and wish to support me, you may donate to the following
 If you have any suggestion or feedback, please feel free to raise an issue in GitHub.
 
 Currently only the following has been implemented for, if you have any tokens to suggest please feel free to raise an issue as well.
-- FTM-TOMB (TSHARE)
-- FTM-YEL (YEL)
+- WFTM-TOMB (TSHARE)
+- WFTM-YEL (YEL)
+- WBNB-MOMA (MOMA)
 
 Please refer to the examples found in the sample settings files.
