@@ -14,6 +14,7 @@
    limitations under the License.
 */
 
+using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -27,40 +28,17 @@ namespace Crypto_LP_Compounder.Contract.Farm
         {
         }
 
-        public override async Task<BigInteger> GetTotalRewardsTask()
-        {
-            Task<BigInteger> getRewardPerSecondTask = GetRewardPerSecondTask();
-
-            DTO.Farm.YEL_Reward.StartTimeFunction startTimeFunction = new()
-            {
-                FromAddress = _Settings.Wallet.Address
-            };
-            Task<BigInteger> startTimeTask = _ContractHandler.
-                QueryAsync<DTO.Farm.YEL_Reward.StartTimeFunction, BigInteger>(startTimeFunction);
-
-            DTO.Farm.YEL_Reward.EndTimeFunction endTimeFunction = new()
-            {
-                FromAddress = _Settings.Wallet.Address
-            };
-            Task<BigInteger> endTimeTask = _ContractHandler.
-                QueryAsync<DTO.Farm.YEL_Reward.EndTimeFunction, BigInteger>(endTimeFunction);
-
-            await Task.WhenAll(getRewardPerSecondTask, startTimeTask, endTimeTask);
-
-            return getRewardPerSecondTask.Result * (endTimeTask.Result - startTimeTask.Result);
-        }
-
         public override async Task<BigInteger> GetRewardPerSecondTask()
         {
-            DTO.Farm.YEL_Reward.RewardPerSecondFunction tSharePerSecondFunction = new()
+            DTO.Farm.YEL_Reward.RewardPerSecondFunction rewardPerSecondFunction = new()
             {
                 FromAddress = _Settings.Wallet.Address
             };
             return await _ContractHandler.
-                QueryAsync<DTO.Farm.YEL_Reward.RewardPerSecondFunction, BigInteger>(tSharePerSecondFunction);
+                QueryAsync<DTO.Farm.YEL_Reward.RewardPerSecondFunction, BigInteger>(rewardPerSecondFunction);
         }
 
-        public async Task<DTO.Farm.YEL_Reward.PoolInfoOutputDTO> GetPoolInfo()
+        public async Task<DTO.Farm.YEL_Reward.PoolInfoOutputDTO> GetPoolInfoTask()
         {
             DTO.Farm.YEL_Reward.PoolInfo poolInfoFunction = new()
             {
@@ -69,6 +47,18 @@ namespace Crypto_LP_Compounder.Contract.Farm
             };
             return await _ContractHandler.
                 QueryDeserializingToObjectAsync<DTO.Farm.YEL_Reward.PoolInfo, DTO.Farm.YEL_Reward.PoolInfoOutputDTO>(poolInfoFunction);
+        }
+
+        public override async Task<DTO.Farm.MasterChef.UserInfoFunctionOutputDTO> GetUserInfoTask()
+        {
+            DTO.Farm.YEL_Reward.UserInfoFunction userInfoFunction = new()
+            {
+                PoolID = _Settings.Farm.FarmPoolID,
+                User = _Settings.Wallet.Address,
+                FromAddress = _Settings.Wallet.Address
+            };
+            return await _ContractHandler.
+                QueryDeserializingToObjectAsync<DTO.Farm.YEL_Reward.UserInfoFunction, DTO.Farm.MasterChef.UserInfoFunctionOutputDTO>(userInfoFunction);
         }
 
         public override async Task<BigInteger> GetPendingRewardTask()
@@ -83,9 +73,45 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 QueryAsync<DTO.Farm.YEL_Reward.PendingRewardFunction, BigInteger>(pendingShareFunction);
         }
 
-        public override async Task<BigInteger> GetAllocPoint()
+        public override async Task<BigInteger> GetAllocPointTask()
         {
-            return await GetPoolInfo().ContinueWith(t => t.Result.AllocPoint);
+            return await GetPoolInfoTask().ContinueWith(t => t.Result.AllocPoint);
+        }
+
+        public override async Task<BigInteger> GetTotalAllocPointTask()
+        {
+            DTO.Farm.MasterChef.TotalAllocPoint totalAllocPointFunction = new()
+            {
+                FromAddress = _Settings.Wallet.Address
+            };
+            return await _ContractHandler.
+                QueryAsync<DTO.Farm.MasterChef.TotalAllocPoint, BigInteger>(totalAllocPointFunction);
+        }
+
+        public override async Task<TransactionReceipt> DepositTask(BigInteger inAmount, BigInteger gasPrice)
+        {
+            DTO.Farm.YEL_Reward.DepositFunction depositFunction = new()
+            {
+                PoolID = _Settings.Farm.FarmPoolID,
+                Amount = inAmount,
+                FromAddress = _Settings.Wallet.Address,
+                GasPrice = gasPrice
+            };
+            return await _ContractHandler.
+                SendRequestAndWaitForReceiptAsync(depositFunction, _Settings.GetCancelTokenByTimeout());
+        }
+
+        public override async Task<TransactionReceipt> HarvestTask(BigInteger gasPrice)
+        {
+            DTO.Farm.YEL_Reward.WithdrawFunction withdrawFunction = new()
+            {
+                PoolID = _Settings.Farm.FarmPoolID,
+                Amount = BigInteger.Zero,
+                FromAddress = _Settings.Wallet.Address,
+                GasPrice = gasPrice
+            };
+            return await _ContractHandler.
+                SendRequestAndWaitForReceiptAsync(withdrawFunction, _Settings.GetCancelTokenByTimeout());
         }
     }
 }

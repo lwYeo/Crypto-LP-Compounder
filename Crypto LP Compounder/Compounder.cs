@@ -121,8 +121,9 @@ namespace Crypto_LP_Compounder
 
             _Farm = _Settings.Farm.FarmType switch
             {
-                "TOMB" => new Contract.Farm.TombFinance(_Settings, _Web3, _Router, _RewardToken),
-                "YEL" => new Contract.Farm.YEL(_Settings, _Web3, _Router, _RewardToken),
+                "WFTM-TOMB:TSHARE" => new Contract.Farm.TombFinance(_Settings, _Web3, _Router, _RewardToken),
+                "WFTM-YEL:YEL" => new Contract.Farm.YEL(_Settings, _Web3, _Router, _RewardToken),
+                "WBNB-MOMA:MOMA" => new Contract.Farm.MOMA(_Settings, _Web3, _Router, _RewardToken),
                 _ => null
             };
 
@@ -224,8 +225,8 @@ namespace Crypto_LP_Compounder
                         intervalRemaining = nextLoopTime - DateTimeOffset.Now;
 
                         Program.WriteLineLog();
-                        Program.WriteLineLog("Next compound in {0:n0} hr {1:mm' min 'ss' sec'} ({2:yyyy-MM-dd T HH:mm:ss K})",
-                            intervalRemaining.TotalHours, intervalRemaining, DateTimeOffset.Now.Add(intervalRemaining));
+                        Program.WriteLineLog("Next compound in {0:n0} d {1:hh' hr 'mm' min 'ss' sec'} ({2:yyyy-MM-dd T HH:mm:ss K})",
+                            intervalRemaining.TotalDays, intervalRemaining, DateTimeOffset.Now.Add(intervalRemaining));
                     }
 
                     await Task.Delay(1000);

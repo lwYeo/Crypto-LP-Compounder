@@ -14,6 +14,7 @@
    limitations under the License.
 */
 
+using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using System.Numerics;
@@ -21,78 +22,73 @@ using System.Threading.Tasks;
 
 namespace Crypto_LP_Compounder.Contract.Farm
 {
-    internal class TombFinance : MasterChef
+    internal class MOMA : MasterChef
     {
-        public TombFinance(Settings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken) :
+        public MOMA(Settings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken) :
             base(settings, web3, router, rewardToken)
         {
         }
 
         public override async Task<BigInteger> GetRewardPerSecondTask()
         {
-            DTO.Farm.TShareReward.RewardPerSecondFunction rewardPerSecondFunction = new()
-            {
-                FromAddress = _Settings.Wallet.Address
-            };
-            return await _ContractHandler.
-                QueryAsync<DTO.Farm.TShareReward.RewardPerSecondFunction, BigInteger>(rewardPerSecondFunction);
-        }
+            BigInteger BSC_BlockTimeSec = 3;
+            HexBigInteger currentBlockNo = await _Web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
 
-        public async Task<DTO.Farm.TShareReward.PoolInfoOutputDTO> GetPoolInfoTask()
-        {
-            DTO.Farm.TShareReward.PoolInfo poolInfoFunction = new()
+            DTO.Farm.MOMA_Reward.GetMultiplierFunction multiplierFunction = new()
             {
-                PoolID = _Settings.Farm.FarmPoolID,
+                FromBlock = currentBlockNo.Value - 1,
+                ToBlock = currentBlockNo.Value,
                 FromAddress = _Settings.Wallet.Address
             };
-            return await _ContractHandler.
-                QueryDeserializingToObjectAsync<DTO.Farm.TShareReward.PoolInfo, DTO.Farm.TShareReward.PoolInfoOutputDTO>(poolInfoFunction);
+            BigInteger multiplier =
+                await _ContractHandler.QueryAsync<DTO.Farm.MOMA_Reward.GetMultiplierFunction, BigInteger>(multiplierFunction);
+
+            DTO.Farm.MOMA_Reward.RewardPerBlockFunction rewardPerSecondFunction = new()
+            {
+                FromAddress = _Settings.Wallet.Address
+            };
+            BigInteger rewardPerBlock =
+                await _ContractHandler.QueryAsync<DTO.Farm.MOMA_Reward.RewardPerBlockFunction, BigInteger>(rewardPerSecondFunction);
+
+            return rewardPerBlock / BSC_BlockTimeSec * multiplier / BigInteger.Pow(10, 12);
         }
 
         public override async Task<DTO.Farm.MasterChef.UserInfoFunctionOutputDTO> GetUserInfoTask()
         {
-            DTO.Farm.TShareReward.UserInfoFunction userInfoFunction = new()
+            DTO.Farm.MOMA_Reward.UserInfoFunction userInfoFunction = new()
             {
-                PoolID = _Settings.Farm.FarmPoolID,
                 User = _Settings.Wallet.Address,
                 FromAddress = _Settings.Wallet.Address
             };
             return await _ContractHandler.
-                QueryDeserializingToObjectAsync<DTO.Farm.TShareReward.UserInfoFunction, DTO.Farm.MasterChef.UserInfoFunctionOutputDTO>(userInfoFunction);
+                QueryDeserializingToObjectAsync<DTO.Farm.MOMA_Reward.UserInfoFunction, DTO.Farm.MasterChef.UserInfoFunctionOutputDTO>(userInfoFunction);
+        }
+
+        public override Task<BigInteger> GetAllocPointTask()
+        {
+            return Task.Run(() => BigInteger.One);
+        }
+
+        public override Task<BigInteger> GetTotalAllocPointTask()
+        {
+            return Task.Run(() => BigInteger.One);
         }
 
         public override async Task<BigInteger> GetPendingRewardTask()
         {
-            DTO.Farm.TShareReward.PendingRewardFunction pendingShareFunction = new()
+            DTO.Farm.MOMA_Reward.PendingRewardFunction pendingShareFunction = new()
             {
-                PoolID = _Settings.Farm.FarmPoolID,
                 User = _Settings.Wallet.Address,
                 FromAddress = _Settings.Wallet.Address
             };
             return await _ContractHandler.
-                QueryAsync<DTO.Farm.TShareReward.PendingRewardFunction, BigInteger>(pendingShareFunction);
-        }
-
-        public override async Task<BigInteger> GetAllocPointTask()
-        {
-            return await GetPoolInfoTask().ContinueWith(t => t.Result.AllocPoint);
-        }
-
-        public override async Task<BigInteger> GetTotalAllocPointTask()
-        {
-            DTO.Farm.MasterChef.TotalAllocPoint totalAllocPointFunction = new()
-            {
-                FromAddress = _Settings.Wallet.Address
-            };
-            return await _ContractHandler.
-                QueryAsync<DTO.Farm.MasterChef.TotalAllocPoint, BigInteger>(totalAllocPointFunction);
+                QueryAsync<DTO.Farm.MOMA_Reward.PendingRewardFunction, BigInteger>(pendingShareFunction);
         }
 
         public override async Task<TransactionReceipt> DepositTask(BigInteger inAmount, BigInteger gasPrice)
         {
-            DTO.Farm.TShareReward.DepositFunction depositFunction = new()
+            DTO.Farm.MOMA_Reward.DepositFunction depositFunction = new()
             {
-                PoolID = _Settings.Farm.FarmPoolID,
                 Amount = inAmount,
                 FromAddress = _Settings.Wallet.Address,
                 GasPrice = gasPrice
@@ -103,9 +99,8 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
         public override async Task<TransactionReceipt> HarvestTask(BigInteger gasPrice)
         {
-            DTO.Farm.TShareReward.WithdrawFunction withdrawFunction = new()
+            DTO.Farm.MOMA_Reward.WithdrawFunction withdrawFunction = new()
             {
-                PoolID = _Settings.Farm.FarmPoolID,
                 Amount = BigInteger.Zero,
                 FromAddress = _Settings.Wallet.Address,
                 GasPrice = gasPrice

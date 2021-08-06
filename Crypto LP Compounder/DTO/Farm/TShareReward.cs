@@ -22,11 +22,6 @@ namespace Crypto_LP_Compounder.DTO.Farm
 {
     public class TShareReward : MasterChef
     {
-        [Function("TOTAL_REWARDS", "uint256")]
-        public class TotalRewardsFunction : FunctionMessage
-        {
-        }
-
         [Function("tSharePerSecond", "uint256")]
         public class RewardPerSecondFunction : FunctionMessage
         {
@@ -58,6 +53,16 @@ namespace Crypto_LP_Compounder.DTO.Farm
             public BigInteger PoolID { get; set; }
         }
 
+        [Function("userInfo", typeof(UserInfoFunctionOutputDTO))]
+        public class UserInfoFunction : FunctionMessage
+        {
+            [Parameter("uint256", "", 1)]
+            public BigInteger PoolID { get; set; }
+
+            [Parameter("address", "", 2)]
+            public string User { get; set; }
+        }
+
         [Function("pendingShare", "uint256")]
         public class PendingRewardFunction : FunctionMessage
         {
@@ -66,6 +71,26 @@ namespace Crypto_LP_Compounder.DTO.Farm
 
             [Parameter("address", "_user", 2)]
             public string User { get; set; }
+        }
+
+        [Function("deposit")]
+        public class DepositFunction : FunctionMessage
+        {
+            [Parameter("uint256", "_pid", 1)]
+            public BigInteger PoolID { get; set; }
+
+            [Parameter("uint256", "_amount", 2)]
+            public BigInteger Amount { get; set; }
+        }
+
+        [Function("withdraw")]
+        public class WithdrawFunction : FunctionMessage
+        {
+            [Parameter("uint256", "_pid", 1)]
+            public BigInteger PoolID { get; set; }
+
+            [Parameter("uint256", "_amount", 2)]
+            public BigInteger Amount { get; set; }
         }
     }
 }

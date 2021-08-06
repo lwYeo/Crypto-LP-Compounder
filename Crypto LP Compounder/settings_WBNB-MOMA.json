@@ -1,0 +1,37 @@
+{
+  "RPC_URL": "https://bsc-dataseed1.binance.org/",
+  "RPC_Timeout": 120,
+  "GasPriceOffsetGwei": 0.0,
+  "FixedGasPriceGwei": 0.0,
+  "MinGasPriceGwei": 0.0,
+  "WETH_Contract": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",//WBNB
+  "USD_Contract": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",//USDC
+  "USD_Decimals": 18,
+  "Wallet": {
+    "Address": "0xYOUR_ADDRESS",//Your wallet address
+    "PrivateKeyCrypt": ""//Do not fill this up as this is encrypted, the app will ask for your private key instead
+  },
+  "LiquidityPool": {
+    "TokenA_Contract": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",//WBNB
+    "TokenA_Decimals": 18,
+    "TokenB_Contract": "0xB72842D6F5feDf91D22d56202802Bb9A79C6322E",//MOMA
+    "TokenB_Decimals": 18,
+    "LP_Contract": "0x94e47b2c97781d506E00775787c815481A307F21",//WBNB-MOMA LP
+    "LP_Decimals": 18,
+    "FactoryContract": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",//PancakeSwap Factory
+    "RouterContract": "0x10ED43C718714eb63d5aA57B78B54704E256024E",//PancakeSwap Router
+    "Slippage": 2.0,
+    "TokenA_Offset": 0.0,
+    "TokenB_Offset": 0.0,
+    "ZapContract": "",
+    "TaxFreeContract": ""
+  },
+  "Farm": {
+    "FarmType": "WBNB-MOMA:MOMA",
+    "FarmContract": "0x4eaDA50Ce6f570393967314d8550a0Ec5BC54c80",//WBNB-MOMA Farm (non-vesting)
+    "RewardContract": "0xB72842D6F5feDf91D22d56202802Bb9A79C6322E",//MOMA
+    "RewardDecimals": 18,
+    "FarmPoolID": 0,
+    "ProcessAllRewards": false
+  }
+}

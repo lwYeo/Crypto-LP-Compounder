@@ -50,61 +50,19 @@ namespace Crypto_LP_Compounder.Contract.Farm
             _ContractHandler = _Web3.Eth.GetContractHandler(_Settings.Farm.FarmContract);
         }
 
-        public abstract Task<BigInteger> GetTotalRewardsTask();
+        public abstract Task<DTO.Farm.MasterChef.UserInfoFunctionOutputDTO> GetUserInfoTask();
 
         public abstract Task<BigInteger> GetRewardPerSecondTask();
 
         public abstract Task<BigInteger> GetPendingRewardTask();
 
-        public abstract Task<BigInteger> GetAllocPoint();
+        public abstract Task<BigInteger> GetAllocPointTask();
 
-        public async Task<BigInteger> GetTotalAllocPoint()
-        {
-            DTO.Farm.MasterChef.TotalAllocPoint totalAllocPointFunction = new()
-            {
-                FromAddress = _Settings.Wallet.Address
-            };
-            return await _ContractHandler.
-                QueryAsync<DTO.Farm.MasterChef.TotalAllocPoint, BigInteger>(totalAllocPointFunction);
-        }
+        public abstract Task<BigInteger> GetTotalAllocPointTask();
 
-        public async Task<DTO.Farm.MasterChef.UserInfoFunctionOutputDTO> GetUserInfoTask()
-        {
-            DTO.Farm.MasterChef.UserInfoFunction userInfoFunction = new()
-            {
-                PoolID = _Settings.Farm.FarmPoolID,
-                User = _Settings.Wallet.Address,
-                FromAddress = _Settings.Wallet.Address
-            };
-            return await _ContractHandler.
-                QueryDeserializingToObjectAsync<DTO.Farm.MasterChef.UserInfoFunction, DTO.Farm.MasterChef.UserInfoFunctionOutputDTO>(userInfoFunction);
-        }
+        public abstract Task<TransactionReceipt> DepositTask(BigInteger inAmount, BigInteger gasPrice);
 
-        public async Task<TransactionReceipt> DepositTask(BigInteger inAmount, BigInteger gasPrice)
-        {
-            DTO.Farm.MasterChef.DepositFunction depositFunction = new()
-            {
-                PoolID = _Settings.Farm.FarmPoolID,
-                Amount = inAmount,
-                FromAddress = _Settings.Wallet.Address,
-                GasPrice = gasPrice
-            };
-            return await _ContractHandler.
-                SendRequestAndWaitForReceiptAsync(depositFunction, _Settings.GetCancelTokenByTimeout());
-        }
-
-        public async Task<TransactionReceipt> HarvestTask(BigInteger gasPrice)
-        {
-            DTO.Farm.MasterChef.WithdrawFunction withdrawFunction = new()
-            {
-                PoolID = _Settings.Farm.FarmPoolID,
-                Amount = BigInteger.Zero,
-                FromAddress = _Settings.Wallet.Address,
-                GasPrice = gasPrice
-            };
-            return await _ContractHandler.
-                SendRequestAndWaitForReceiptAsync(withdrawFunction, _Settings.GetCancelTokenByTimeout());
-        }
+        public abstract Task<TransactionReceipt> HarvestTask(BigInteger gasPrice);
 
         public bool HandleDepositLpToFarm(BigInteger lpAmount, ref bool isToPostpone)
         {
@@ -468,11 +426,11 @@ namespace Crypto_LP_Compounder.Contract.Farm
                     ContinueWith(t => t.Result * valuePerLpEthTask.Result);
 
                 Task<BigDecimal> allocPointTask =
-                    GetAllocPoint().
+                    GetAllocPointTask().
                     ContinueWith(t => UnitConversion.Convert.FromWeiToBigDecimal(t.Result, UnitConversion.EthUnit.Ether));
 
                 Task<BigDecimal> totalAllocPointTask =
-                    GetTotalAllocPoint().
+                    GetTotalAllocPointTask().
                     ContinueWith(t => UnitConversion.Convert.FromWeiToBigDecimal(t.Result, UnitConversion.EthUnit.Ether));
 
                 farmAllocWeightTask = Task.Run(() => allocPointTask.Result / totalAllocPointTask.Result);
@@ -539,7 +497,7 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 {
                     compoundIntervalSecond = 60 * 60 * 24 * 365 / compoundPerYear;
 
-                    Program.WriteLineLog(optimalApy < 1000 ? "{0:n2}" : "{0:n0}" + " % ({1:n0} compounds / {2:n2} USD / {3:n10} ETH per year)",
+                    Program.WriteLineLog((optimalApy < 1000 ? "{0:n2}" : "{0:n0}") + " % ({1:n0} compounds / {2:n2} USD / {3:n10} ETH per year)",
                         optimalApy,
                         compoundPerYear,
                         (decimal)(userDepositAmtEthTask.Result * ethToUsdTask.Result * optimalApy / 100),
