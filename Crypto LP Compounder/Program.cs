@@ -53,7 +53,7 @@ namespace Crypto_LP_Compounder
         internal static void ExitWithErrorMessage(int exitCode, string errorMessage, params object[] messageParams)
         {
             WriteLineLog();
-            
+
             if (messageParams?.Any() ?? false)
                 WriteLineLog(string.Format(errorMessage, messageParams));
             else
@@ -63,7 +63,7 @@ namespace Crypto_LP_Compounder
             WriteLog("Press any key to continue...");
             Console.ReadKey();
             WriteLineLog();
-            
+
             Environment.Exit(exitCode);
         }
 
@@ -152,9 +152,9 @@ namespace Crypto_LP_Compounder
 
                             recentDate = DateTime.Today;
                         }
-                        else if (_LogQueue.Count > 0)
+                        else if (_LogQueue.TryPeek(out object preview))
                         {
-                            if (_LogQueue.Peek() is bool)
+                            if (preview is bool)
                                 isLogCompoundProcess = (bool)_LogQueue.Dequeue();
                             else
                             {
@@ -191,8 +191,8 @@ namespace Crypto_LP_Compounder
             Task.Factory.StartNew(() =>
             {
                 while (!_FlushCompleteEvent.WaitOne(10))
-                    if (_ConsoleLogQueue.Count > 0)
-                        Console.Write(_ConsoleLogQueue.Dequeue());
+                    if (_ConsoleLogQueue.TryDequeue(out string log))
+                        Console.Write(log);
             },
             TaskCreationOptions.LongRunning);
         }
