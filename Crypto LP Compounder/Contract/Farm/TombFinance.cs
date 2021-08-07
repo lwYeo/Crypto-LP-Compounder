@@ -49,18 +49,6 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 QueryDeserializingToObjectAsync<DTO.Farm.TShareReward.PoolInfo, DTO.Farm.TShareReward.PoolInfoOutputDTO>(poolInfoFunction);
         }
 
-        public override async Task<DTO.Farm.MasterChef.UserInfoFunctionOutputDTO> GetUserInfoTask()
-        {
-            DTO.Farm.TShareReward.UserInfoFunction userInfoFunction = new()
-            {
-                PoolID = _Settings.Farm.FarmPoolID,
-                User = _Settings.Wallet.Address,
-                FromAddress = _Settings.Wallet.Address
-            };
-            return await _ContractHandler.
-                QueryDeserializingToObjectAsync<DTO.Farm.TShareReward.UserInfoFunction, DTO.Farm.MasterChef.UserInfoFunctionOutputDTO>(userInfoFunction);
-        }
-
         public override async Task<BigInteger> GetPendingRewardTask()
         {
             DTO.Farm.TShareReward.PendingRewardFunction pendingShareFunction = new()
@@ -90,7 +78,7 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
         public override async Task<TransactionReceipt> DepositTask(BigInteger inAmount, BigInteger gasPrice)
         {
-            DTO.Farm.TShareReward.DepositFunction depositFunction = new()
+            DTO.Farm.MasterChef.DepositFunction depositFunction = new()
             {
                 PoolID = _Settings.Farm.FarmPoolID,
                 Amount = inAmount,
@@ -103,7 +91,7 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
         public override async Task<TransactionReceipt> HarvestTask(BigInteger gasPrice)
         {
-            DTO.Farm.TShareReward.WithdrawFunction withdrawFunction = new()
+            DTO.Farm.MasterChef.WithdrawFunction withdrawFunction = new()
             {
                 PoolID = _Settings.Farm.FarmPoolID,
                 Amount = BigInteger.Zero,

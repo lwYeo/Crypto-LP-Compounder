@@ -22,25 +22,6 @@ namespace Crypto_LP_Compounder.DTO.Farm
 {
     public class MOMA_Reward : MasterChef
     {
-        [Function("pendingReward", "uint256")]
-        public class PendingRewardFunction : FunctionMessage
-        {
-            [Parameter("address", "_user")]
-            public string User { get; set; }
-        }
-
-        [Function("userInfo", typeof(UserInfoFunctionOutputDTO))]
-        public class UserInfoFunction : FunctionMessage
-        {
-            [Parameter("address", "")]
-            public string User { get; set; }
-        }
-
-        [Function("rewardPerBlock", "uint256")]
-        public class RewardPerBlockFunction : FunctionMessage
-        {
-        }
-
         [Function("getMultiplier", "uint256")]
         public class GetMultiplierFunction : FunctionMessage
         {
@@ -52,14 +33,33 @@ namespace Crypto_LP_Compounder.DTO.Farm
         }
 
         [Function("deposit")]
-        public class DepositFunction : FunctionMessage
+        new public class DepositFunction : FunctionMessage
         {
             [Parameter("uint256", "_amount")]
             public BigInteger Amount { get; set; }
         }
 
+        [Function("rewardPerBlock", "uint256")]
+        public class RewardPerBlockFunction : FunctionMessage
+        {
+        }
+
+        [Function("pendingReward", "uint256")]
+        public class PendingRewardFunction : FunctionMessage
+        {
+            [Parameter("address", "_user")]
+            public virtual string User { get; set; }
+        }
+
+        [Function("userInfo", typeof(UserInfoFunctionOutputDTO))]
+        new public class UserInfoFunction : FunctionMessage
+        {
+            [Parameter("address", "")]
+            public string User { get; set; }
+        }
+
         [Function("withdraw")]
-        public class WithdrawFunction : FunctionMessage
+        new public class WithdrawFunction : FunctionMessage
         {
             [Parameter("uint256", "_amount")]
             public BigInteger Amount { get; set; }

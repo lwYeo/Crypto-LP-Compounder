@@ -22,11 +22,6 @@ namespace Crypto_LP_Compounder.DTO.Farm
 {
     public abstract class MasterChef
     {
-        [Function("totalAllocPoint", "uint256")]
-        public class TotalAllocPoint : FunctionMessage
-        {
-        }
-
         [FunctionOutput]
         public class UserInfoFunctionOutputDTO : IFunctionOutputDTO
         {
@@ -35,6 +30,41 @@ namespace Crypto_LP_Compounder.DTO.Farm
 
             [Parameter("uint256", "rewardDebt", 2)]
             public BigInteger RewardDebt { get; set; }
+        }
+
+        [Function("deposit")]
+        public class DepositFunction : FunctionMessage
+        {
+            [Parameter("uint256", "_pid", 1)]
+            public BigInteger PoolID { get; set; }
+
+            [Parameter("uint256", "_amount", 2)]
+            public BigInteger Amount { get; set; }
+        }
+
+        [Function("totalAllocPoint", "uint256")]
+        public class TotalAllocPoint : FunctionMessage
+        {
+        }
+
+        [Function("userInfo", typeof(UserInfoFunctionOutputDTO))]
+        public class UserInfoFunction : FunctionMessage
+        {
+            [Parameter("uint256", "", 1)]
+            public BigInteger PoolID { get; set; }
+
+            [Parameter("address", "", 2)]
+            public string User { get; set; }
+        }
+
+        [Function("withdraw")]
+        public class WithdrawFunction : FunctionMessage
+        {
+            [Parameter("uint256", "_pid", 1)]
+            public BigInteger PoolID { get; set; }
+
+            [Parameter("uint256", "_amount", 2)]
+            public BigInteger Amount { get; set; }
         }
     }
 }

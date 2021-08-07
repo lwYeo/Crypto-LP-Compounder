@@ -22,11 +22,6 @@ namespace Crypto_LP_Compounder.DTO.Farm
 {
     public class TShareReward : MasterChef
     {
-        [Function("tSharePerSecond", "uint256")]
-        public class RewardPerSecondFunction : FunctionMessage
-        {
-        }
-
         [FunctionOutput]
         public class PoolInfoOutputDTO : IFunctionOutputDTO
         {
@@ -46,23 +41,6 @@ namespace Crypto_LP_Compounder.DTO.Farm
             public bool IsStarted { get; set; }
         }
 
-        [Function("poolInfo", typeof(PoolInfoOutputDTO))]
-        public class PoolInfo : FunctionMessage
-        {
-            [Parameter("uint256", "")]
-            public BigInteger PoolID { get; set; }
-        }
-
-        [Function("userInfo", typeof(UserInfoFunctionOutputDTO))]
-        public class UserInfoFunction : FunctionMessage
-        {
-            [Parameter("uint256", "", 1)]
-            public BigInteger PoolID { get; set; }
-
-            [Parameter("address", "", 2)]
-            public string User { get; set; }
-        }
-
         [Function("pendingShare", "uint256")]
         public class PendingRewardFunction : FunctionMessage
         {
@@ -73,24 +51,16 @@ namespace Crypto_LP_Compounder.DTO.Farm
             public string User { get; set; }
         }
 
-        [Function("deposit")]
-        public class DepositFunction : FunctionMessage
+        [Function("poolInfo", typeof(PoolInfoOutputDTO))]
+        public class PoolInfo : FunctionMessage
         {
-            [Parameter("uint256", "_pid", 1)]
+            [Parameter("uint256", "")]
             public BigInteger PoolID { get; set; }
-
-            [Parameter("uint256", "_amount", 2)]
-            public BigInteger Amount { get; set; }
         }
 
-        [Function("withdraw")]
-        public class WithdrawFunction : FunctionMessage
+        [Function("tSharePerSecond", "uint256")]
+        public class RewardPerSecondFunction : FunctionMessage
         {
-            [Parameter("uint256", "_pid", 1)]
-            public BigInteger PoolID { get; set; }
-
-            [Parameter("uint256", "_amount", 2)]
-            public BigInteger Amount { get; set; }
         }
     }
 }

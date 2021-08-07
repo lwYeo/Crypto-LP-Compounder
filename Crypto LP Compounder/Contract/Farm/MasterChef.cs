@@ -50,8 +50,6 @@ namespace Crypto_LP_Compounder.Contract.Farm
             _ContractHandler = _Web3.Eth.GetContractHandler(_Settings.Farm.FarmContract);
         }
 
-        public abstract Task<DTO.Farm.MasterChef.UserInfoFunctionOutputDTO> GetUserInfoTask();
-
         public abstract Task<BigInteger> GetRewardPerSecondTask();
 
         public abstract Task<BigInteger> GetPendingRewardTask();
@@ -63,6 +61,18 @@ namespace Crypto_LP_Compounder.Contract.Farm
         public abstract Task<TransactionReceipt> DepositTask(BigInteger inAmount, BigInteger gasPrice);
 
         public abstract Task<TransactionReceipt> HarvestTask(BigInteger gasPrice);
+
+        public virtual async Task<DTO.Farm.MasterChef.UserInfoFunctionOutputDTO> GetUserInfoTask()
+        {
+            DTO.Farm.MasterChef.UserInfoFunction userInfoFunction = new()
+            {
+                PoolID = _Settings.Farm.FarmPoolID,
+                User = _Settings.Wallet.Address,
+                FromAddress = _Settings.Wallet.Address
+            };
+            return await _ContractHandler.
+                QueryDeserializingToObjectAsync<DTO.Farm.MasterChef.UserInfoFunction, DTO.Farm.MasterChef.UserInfoFunctionOutputDTO>(userInfoFunction);
+        }
 
         public bool HandleDepositLpToFarm(BigInteger lpAmount, ref bool isToPostpone)
         {
