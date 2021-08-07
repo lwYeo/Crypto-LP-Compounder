@@ -127,16 +127,18 @@ namespace Crypto_LP_Compounder.Contract
 
                 if (approveResult.Succeeded())
                 {
-                    Program.WriteLineLog("Success: Approve spend (gas: {0:n10} ETH, txn ID: {1})",
+                    Program.WriteLineLog("Success: Approve spend (gas: {0:n10} {1}, txn ID: {2})",
                         UnitConversion.Convert.FromWei(approveResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         approveResult.TransactionHash);
 
                     return true;
                 }
                 else
                 {
-                    Program.WriteLineLog("Failed: Approve spend, gas: {0:n10} ETH, txn ID: {1}",
+                    Program.WriteLineLog("Failed: Approve spend, gas: {0:n10} {1}, txn ID: {2}",
                         UnitConversion.Convert.FromWei(approveResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         approveResult.TransactionHash);
 
                     if (approveResult.HasLogs())

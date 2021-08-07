@@ -120,8 +120,9 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                 if (zapTxnReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Zap reward to LP (gas: {0:n10} ETH, txn ID: {1})",
+                    Program.WriteLineLog("Failed: Zap reward to LP (gas: {0:n10} {1}, txn ID: {2})",
                         UnitConversion.Convert.FromWei(zapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         zapTxnReceipt.TransactionHash);
 
                     return false;
@@ -143,12 +144,13 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                 rewardAmount = transferOutEvents.Select(l => l.Event.Value).Aggregate((currentSum, item) => currentSum + item);
 
-                Program.WriteLineLog("Success: Zap {0:n10} reward to {1:n10} LP (gas: {2:n10} ETH, txn ID: {3})",
+                Program.WriteLineLog("Success: Zap {0:n10} reward to {1:n10} LP (gas: {2:n10} {3}, txn ID: {4})",
                     (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardAmount, UnitConversion.EthUnit.Wei) /
                         BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)),
                     (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(lpAmout, UnitConversion.EthUnit.Wei) /
                         BigDecimal.Pow(10, _LpSettings.LP_Decimals)),
                     UnitConversion.Convert.FromWei(zapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                    _Settings.GasSymbol,
                     zapTxnReceipt.TransactionHash);
 
                 return true;

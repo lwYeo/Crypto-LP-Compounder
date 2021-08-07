@@ -109,8 +109,9 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
                 if (depositLpReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Deposit LP tokens (gas: {0:n10} ETH, txn ID: {1})",
+                    Program.WriteLineLog("Failed: Deposit LP tokens (gas: {0:n10} {1}, txn ID: {2})",
                         UnitConversion.Convert.FromWei(depositLpReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         depositLpReceipt.TransactionHash);
 
                     return false;
@@ -126,10 +127,11 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
                 lpAmount = transferOutEvents.Select(l => l.Event.Value).Aggregate((currentSum, item) => currentSum + item);
 
-                Program.WriteLineLog("Success: Deposit {0:n10} LP tokens (gas: {1:n10} ETH, txn ID: {2})",
+                Program.WriteLineLog("Success: Deposit {0:n10} LP tokens (gas: {1:n10} {2}, txn ID: {3})",
                     (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(lpAmount, UnitConversion.EthUnit.Wei) /
                         BigDecimal.Pow(10, _Settings.LiquidityPool.LP_Decimals)),
                     UnitConversion.Convert.FromWei(depositLpReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                    _Settings.GasSymbol,
                     depositLpReceipt.TransactionHash);
 
                 return true;
@@ -180,14 +182,16 @@ namespace Crypto_LP_Compounder.Contract.Farm
                         GetEvent<DTO.ERC20.TransferEventDTO>().
                         DecodeAllEventsForEvent(harvestResult.Logs);
 
-                    Program.WriteLineLog("Success: Harvest reward (gas: {0:n10} ETH, txn ID: {1})",
+                    Program.WriteLineLog("Success: Harvest reward (gas: {0:n10} {1}, txn ID: {2})",
                         UnitConversion.Convert.FromWei(harvestResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         harvestResult.TransactionHash);
                 }
                 else
                 {
-                    Program.WriteLineLog("Failed: Harvest reward, gas: {0:n10} ETH, txn ID: {1})",
+                    Program.WriteLineLog("Failed: Harvest reward, gas: {0:n10} {1}, txn ID: {2})",
                         UnitConversion.Convert.FromWei(harvestResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         harvestResult.TransactionHash);
 
                     return false;
@@ -240,11 +244,12 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 BigInteger rewardInGas =
                     _Router.GetAmountsOutTask(rewardHarvestAmt, _Settings.Farm.RewardContract, _Settings.WETH_Contract).Result;
 
-                Program.WriteLineLog("{0:n10} ({1:n10} ETH)",
+                Program.WriteLineLog("{0:n10} ({1:n10} {2})",
                     (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardHarvestAmt, UnitConversion.EthUnit.Wei) /
                         BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)),
                     (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardInGas, UnitConversion.EthUnit.Wei) /
-                        BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)));
+                        BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)),
+                    _Settings.GasSymbol);
 
                 if (rewardHarvestAmt.IsZero || ((rewardInGas - estimateGasUse) <= BigInteger.One))
                 {
@@ -323,17 +328,20 @@ namespace Crypto_LP_Compounder.Contract.Farm
                             _Settings.WETH_Contract).
                         ContinueWith(t => UnitConversion.Convert.FromWeiToBigDecimal(t.Result, UnitConversion.EthUnit.Ether));
 
-                Program.WriteLineLog("Reward value: {0:n2} USD / {1:n10} ETH",
+                Program.WriteLineLog("Reward value: {0:n2} USD / {1:n10} {2}",
                     (decimal)(rewardValueEth.Result * ethToUsdTask.Result),
-                    (decimal)rewardValueEth.Result);
+                    (decimal)rewardValueEth.Result,
+                    _Settings.GasSymbol);
 
-                Program.WriteLineLog("Token A value: {0:n2} USD / {1:n10} ETH",
+                Program.WriteLineLog("Token A value: {0:n2} USD / {1:n10} {2}",
                     (decimal)(tokenValueAEthTask.Result * ethToUsdTask.Result),
-                    (decimal)tokenValueAEthTask.Result);
+                    (decimal)tokenValueAEthTask.Result,
+                    _Settings.GasSymbol);
 
-                Program.WriteLineLog("Token B value: {0:n2} USD / {1:n10} ETH",
+                Program.WriteLineLog("Token B value: {0:n2} USD / {1:n10} {2}",
                     (decimal)(tokenValueBEthTask.Result * ethToUsdTask.Result),
-                    (decimal)tokenValueBEthTask.Result);
+                    (decimal)tokenValueBEthTask.Result,
+                    _Settings.GasSymbol);
 
                 Program.WriteLog("Getting pending rewards... ");
 
@@ -342,10 +350,11 @@ namespace Crypto_LP_Compounder.Contract.Farm
                     ContinueWith(t => UnitConversion.Convert.FromWeiToBigDecimal(t.Result, UnitConversion.EthUnit.Wei) /
                         BigDecimal.Pow(10, _Settings.Farm.RewardDecimals));
 
-                Program.WriteLineLog("{0:n10} ({1:n2} USD / {2:n10} ETH)",
+                Program.WriteLineLog("{0:n10} ({1:n2} USD / {2:n10} {3})",
                     (decimal)pendingReward.Result,
                     (decimal)(pendingReward.Result * rewardValueEth.Result * ethToUsdTask.Result),
-                    (decimal)(pendingReward.Result * rewardValueEth.Result));
+                    (decimal)(pendingReward.Result * rewardValueEth.Result),
+                    _Settings.GasSymbol);
             }
             catch (Exception ex)
             {
@@ -396,10 +405,11 @@ namespace Crypto_LP_Compounder.Contract.Farm
                         return (tokenAOffsetEth + tokenBOffsetEth) / totalLpSupplyTask.Result;
                     });
 
-                Program.WriteLineLog("{0:n10} ({1:n2} USD / {2:n10} ETH)",
+                Program.WriteLineLog("{0:n10} ({1:n2} USD / {2:n10} {3})",
                     (decimal)(userDepositSizeTask.Result / BigDecimal.Pow(10, _Settings.LiquidityPool.LP_Decimals)),
                     (decimal)(userDepositAmtEthTask.Result * ethToUsdTask.Result),
-                    (decimal)userDepositAmtEthTask.Result);
+                    (decimal)userDepositAmtEthTask.Result,
+                    _Settings.GasSymbol);
 
                 BigDecimal underlyingTokenAEth =
                     (userDepositAmtEthTask.Result * tokenAInLPEthTask.Result / (tokenAInLPEthTask.Result + tokenBInLPEthTask.Result));
@@ -407,15 +417,17 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 BigDecimal underlyingTokenBEth =
                     (userDepositAmtEthTask.Result * tokenBInLPEthTask.Result / (tokenAInLPEthTask.Result + tokenBInLPEthTask.Result));
 
-                Program.WriteLineLog("Underlying Token A value: {0:n10} ({1:n2} USD / {2:n10} ETH)",
+                Program.WriteLineLog("Underlying Token A value: {0:n10} ({1:n2} USD / {2:n10} {3})",
                     (decimal)(underlyingTokenAEth / tokenValueAEthTask.Result),
                     (decimal)(underlyingTokenAEth * ethToUsdTask.Result),
-                    (decimal)underlyingTokenAEth);
+                    (decimal)underlyingTokenAEth,
+                    _Settings.GasSymbol);
 
-                Program.WriteLineLog("Underlying Token B value: {0:n10} ({1:n2} USD / {2:n10} ETH)",
+                Program.WriteLineLog("Underlying Token B value: {0:n10} ({1:n2} USD / {2:n10} {3})",
                     (decimal)(underlyingTokenBEth / tokenValueBEthTask.Result),
                     (decimal)(underlyingTokenBEth * ethToUsdTask.Result),
-                    (decimal)underlyingTokenBEth);
+                    (decimal)underlyingTokenBEth,
+                    _Settings.GasSymbol);
             }
             catch (Exception ex)
             {
@@ -460,10 +472,11 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
                 if (apr > 0)
                 {
-                    Program.WriteLineLog("{0:n3} % ({1:n2} USD / {2:n10} ETH)",
+                    Program.WriteLineLog("{0:n3} % ({1:n2} USD / {2:n10} {3})",
                         (decimal)apr,
                         (decimal)(userDepositAmtEthTask.Result * ethToUsdTask.Result * apr / 100),
-                        (decimal)(userDepositAmtEthTask.Result * apr / 100));
+                        (decimal)(userDepositAmtEthTask.Result * apr / 100),
+                        _Settings.GasSymbol);
                 }
                 else
                 {
@@ -507,11 +520,21 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 {
                     compoundIntervalSecond = 60 * 60 * 24 * 365 / compoundPerYear;
 
-                    Program.WriteLineLog((optimalApy < 1000 ? "{0:n2}" : "{0:n0}") + " % ({1:n0} compounds / {2:n2} USD / {3:n10} ETH per year)",
+                    BigDecimal optimalEthPerYr = userDepositAmtEthTask.Result * optimalApy / 100;
+                    BigDecimal optimalUsdPerYr = optimalEthPerYr * ethToUsdTask.Result;
+
+                    Program.WriteLineLog(
+                        (optimalApy < 1000 ? "{0:n2}" : "{0:n0}") +
+                            " % ({1:n0} compounds / " +
+                            (optimalUsdPerYr < 1000 ? "{2:n2}" : "{2:n0}") +
+                            " USD / " +
+                            (optimalEthPerYr < 1000 ? "{3:n10}" : "{3:n0}") +
+                            " {4} per year)",
                         optimalApy,
                         compoundPerYear,
-                        (decimal)(userDepositAmtEthTask.Result * ethToUsdTask.Result * optimalApy / 100),
-                        (decimal)(userDepositAmtEthTask.Result * optimalApy / 100));
+                        (decimal)optimalUsdPerYr,
+                        (decimal)optimalEthPerYr,
+                        _Settings.GasSymbol);
                 }
                 else
                 {

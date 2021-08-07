@@ -235,8 +235,9 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                 if (swapTxnReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Swap reward to token (gas: {0:n10} ETH, txn ID: {1})",
+                    Program.WriteLineLog("Failed: Swap reward to token (gas: {0:n10} {1}, txn ID: {2})",
                         UnitConversion.Convert.FromWei(swapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         swapTxnReceipt.TransactionHash);
 
                     return false;
@@ -256,8 +257,9 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
                     (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(tokenAmount, UnitConversion.EthUnit.Wei) / contractDecimals),
                     contractName);
 
-                Program.WriteLineLog("(gas: {0:n10} ETH, txn ID: {1})",
+                Program.WriteLineLog("(gas: {0:n10} {1}, txn ID: {2})",
                     UnitConversion.Convert.FromWei(swapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                    _Settings.GasSymbol,
                     swapTxnReceipt.TransactionHash);
 
                 return true;
@@ -344,8 +346,9 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                 if (addLiquidityReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Add LP with tokens (gas: {0:n10} ETH, txn ID: {1})",
+                    Program.WriteLineLog("Failed: Add LP with tokens (gas: {0:n10} {1}, txn ID: {2})",
                         UnitConversion.Convert.FromWei(addLiquidityReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         addLiquidityReceipt.TransactionHash);
 
                     return false;
@@ -361,10 +364,11 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                 lpAmount = transferInEvents.Select(l => l.Event.Value).Aggregate((currentSum, item) => currentSum + item);
 
-                Program.WriteLineLog("Success: Added {0:n10} LP tokens (gas: {1:n10} ETH, txn ID: {2})",
+                Program.WriteLineLog("Success: Added {0:n10} LP tokens (gas: {1:n10} {2}, txn ID: {3})",
                     (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(lpAmount, UnitConversion.EthUnit.Wei) /
                         BigDecimal.Pow(10, _LpSettings.LP_Decimals)),
                     UnitConversion.Convert.FromWei(addLiquidityReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                    _Settings.GasSymbol,
                     addLiquidityReceipt.TransactionHash);
 
                 return true;

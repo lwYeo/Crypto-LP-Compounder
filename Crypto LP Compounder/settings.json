@@ -4,6 +4,7 @@
   "GasPriceOffsetGwei": 0.0,
   "FixedGasPriceGwei": 0.0,
   "MinGasPriceGwei": 0.0,
+  "GasSymbol": "ETH",
   "WETH_Contract": "",
   "USD_Contract": "",
   "USD_Decimals": 6,

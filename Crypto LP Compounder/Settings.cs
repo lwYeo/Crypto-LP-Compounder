@@ -115,6 +115,18 @@ namespace Crypto_LP_Compounder
                     isSettingChanged = true;
                 }
 
+                while (string.IsNullOrWhiteSpace(settings.GasSymbol))
+                {
+                    Program.WriteLineLog("Gas symbol is empty!");
+                    Program.WriteLog("New gas symbol (e.g. ETH) > ");
+                    Program.EnableQuickEdit();
+
+                    settings.GasSymbol = Console.ReadLine();
+
+                    Program.DisableQuickEdit();
+                    isSettingChanged = true;
+                }
+
                 while (settings.LiquidityPool.Slippage < 0.1f)
                 {
                     Program.WriteLineLog("Invalid slippage! Must be >= 0.1");
@@ -272,6 +284,7 @@ namespace Crypto_LP_Compounder
         public float GasPriceOffsetGwei { get; set; } = 0.0f;
         public float FixedGasPriceGwei { get; set; } = 0.0f;
         public float MinGasPriceGwei { get; set; } = 0.0f;
+        public string GasSymbol { get; set; } = "ETH";
         public string WETH_Contract { get; set; } = string.Empty;
         public string USD_Contract { get; set; } = string.Empty;
         public uint USD_Decimals { get; set; } = 6;

@@ -82,6 +82,7 @@ namespace Crypto_LP_Compounder
             Program.WriteLineLog("GasPriceOffsetGwei:" + _Settings.GasPriceOffsetGwei.ToString() + " Gwei");
             Program.WriteLineLog("FixedGasPriceGwei: " + sFixedGasGwei);
             Program.WriteLineLog("MinGasPriceGwei:   " + _Settings.GetUserMinGasPrice().ToString() + " Gwei");
+            Program.WriteLineLog("GasSymbol:         " + _Settings.GasSymbol);
             Program.WriteLineLog("WETH_Contract:     " + _Settings.WETH_Contract);
             Program.WriteLineLog("USD_Contract:      " + _Settings.USD_Contract);
             Program.WriteLineLog("USD_Decimals:      " + _Settings.USD_Decimals);
@@ -440,8 +441,9 @@ namespace Crypto_LP_Compounder
                 }
                 else
                 {
-                    Program.WriteLineLog("{0:n10} ETH",
-                        (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(gasCostPerTxn, UnitConversion.EthUnit.Ether)));
+                    Program.WriteLineLog("{0:n10} {1}",
+                        (decimal)UnitConversion.Convert.FromWeiToBigDecimal(gasCostPerTxn, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol);
 
                     return true;
                 }
@@ -467,7 +469,7 @@ namespace Crypto_LP_Compounder
 
                 decimal balance = UnitConversion.Convert.FromWei(gasBalanceTask.Result, UnitConversion.EthUnit.Ether);
 
-                Program.WriteLineLog("{0:n10} ETH", balance);
+                Program.WriteLineLog("{0:n10} {1}", balance, _Settings.GasSymbol);
             }
             catch (Exception ex)
             {
@@ -506,8 +508,9 @@ namespace Crypto_LP_Compounder
 
                 if (topUpGasReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Top up gas (gas: {0:n10} ETH, txn ID: {1})",
+                    Program.WriteLineLog("Failed: Top up gas (gas: {0:n10} {1}, txn ID: {2})",
                         UnitConversion.Convert.FromWei(topUpGasReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         topUpGasReceipt.TransactionHash);
 
                     return false;
@@ -539,11 +542,13 @@ namespace Crypto_LP_Compounder
                         (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardToSwap.Result, UnitConversion.EthUnit.Wei) /
                         BigDecimal.Pow(10, _Settings.Farm.RewardDecimals));
 
-                    Program.WriteLineLog("Success: (gas: {0:n10} ETH, txn ID: {1})",
+                    Program.WriteLineLog("Success: (gas: {0:n10} {1}, txn ID: {2})",
                         UnitConversion.Convert.FromWei(topUpGasReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         topUpGasReceipt.TransactionHash);
 
-                    Program.WriteLineLog("Topped up gas of {0:n10} ETH with {1:n10} reward token", ethAmount, rewardSwapAmt);
+                    Program.WriteLineLog("Topped up gas of {0:n10} {1} with {2:n10} reward token",
+                        ethAmount, _Settings.GasSymbol, rewardSwapAmt);
 
                     return true;
                 }
@@ -586,8 +591,9 @@ namespace Crypto_LP_Compounder
 
                 if (transferReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Send dev fee (gas: {0:n10} ETH, txn ID: {1})",
+                    Program.WriteLineLog("Failed: Send dev fee (gas: {0:n10} {1}, txn ID: {2})",
                         UnitConversion.Convert.FromWei(transferReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         transferReceipt.TransactionHash);
 
                     return false;
@@ -612,8 +618,9 @@ namespace Crypto_LP_Compounder
                             BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)),
                         DevFee);
 
-                    Program.WriteLineLog("(gas: {0:n10} ETH, txn ID: {1})",
+                    Program.WriteLineLog("(gas: {0:n10} {1}, txn ID: {2})",
                         UnitConversion.Convert.FromWei(transferReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
+                        _Settings.GasSymbol,
                         transferReceipt.TransactionHash);
 
                     return true;
