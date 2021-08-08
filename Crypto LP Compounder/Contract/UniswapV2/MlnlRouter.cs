@@ -31,7 +31,7 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
     {
         private readonly ContractHandler _MlnlContractHandler;
 
-        public MlnlRouter(Settings settings, Web3 web3) : base(settings, web3)
+        public MlnlRouter(Log log, Settings settings, Web3 web3) : base(log, settings, web3)
         {
             if (!string.IsNullOrWhiteSpace(_LpSettings.ZapContract))
                 _MlnlContractHandler = _Web3.Eth.GetContractHandler(_LpSettings.ZapContract);
@@ -80,7 +80,7 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                     if (retryAttempt > maxRetries || Program.IsTerminate) return;
 
-                    Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, maxRetries);
+                    _Log.WriteLine($"Retrying... ({retryAttempt}/{maxRetries})");
                     Task.Delay(5000).Wait();
 
                     if (Program.IsTerminate) return;
@@ -90,14 +90,16 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
             }
         }
 
-        public bool HandleZapRewardToLP(BigInteger rewardAmount, ref BigInteger lpAmout)
+        public bool HandleZapRewardToLP(BigInteger rewardAmount, ref BigInteger lpAmount)
         {
-            lpAmout = BigInteger.Zero;
+            lpAmount = BigInteger.Zero;
 
-            Program.WriteLineLog();
-            Program.WriteLineLog("Zapping {0:n10} reward to LP...",
-                (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardAmount, UnitConversion.EthUnit.Wei) /
-                    BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)));
+            BigDecimal rewardDecAmount =
+                UnitConversion.Convert.FromWeiToBigDecimal(rewardAmount, UnitConversion.EthUnit.Wei) /
+                    BigDecimal.Pow(10, _Settings.Farm.RewardDecimals);
+
+            _Log.WriteLine();
+            _Log.WriteLine($"Zapping {(decimal)rewardDecAmount:n10} reward to LP...");
             try
             {
                 BigInteger gasPrice = _Settings.GetGasPrice(_Web3);
@@ -120,10 +122,9 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                 if (zapTxnReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Zap reward to LP (gas: {0:n10} {1}, txn ID: {2})",
-                        UnitConversion.Convert.FromWei(zapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        zapTxnReceipt.TransactionHash);
+                    _Log.WriteLine(
+                        $"Failed: Zap reward to LP (gas: {UnitConversion.Convert.FromWei(zapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {zapTxnReceipt.TransactionHash})");
 
                     return false;
                 }
@@ -140,36 +141,37 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
                     Where(e => e.Event.To.Equals(_Settings.Wallet.Address, StringComparison.OrdinalIgnoreCase)).
                     ToList();
 
-                lpAmout = transferInEvents.Select(l => l.Event.Value).Aggregate((currentSum, item) => currentSum + item);
-
                 rewardAmount = transferOutEvents.Select(l => l.Event.Value).Aggregate((currentSum, item) => currentSum + item);
 
-                Program.WriteLineLog("Success: Zap {0:n10} reward to {1:n10} LP (gas: {2:n10} {3}, txn ID: {4})",
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardAmount, UnitConversion.EthUnit.Wei) /
-                        BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)),
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(lpAmout, UnitConversion.EthUnit.Wei) /
-                        BigDecimal.Pow(10, _LpSettings.LP_Decimals)),
-                    UnitConversion.Convert.FromWei(zapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                    _Settings.GasSymbol,
-                    zapTxnReceipt.TransactionHash);
+                lpAmount = transferInEvents.Select(l => l.Event.Value).Aggregate((currentSum, item) => currentSum + item);
+
+                BigDecimal lpAmountDec =
+                    UnitConversion.Convert.FromWeiToBigDecimal(lpAmount, UnitConversion.EthUnit.Wei) /
+                        BigDecimal.Pow(10, _LpSettings.LP_Decimals);
+
+                _Log.WriteLine(
+                    $"Success: Zap {(decimal)rewardDecAmount:n10} reward to" +
+                    $" {(decimal)lpAmountDec:n10} LP" +
+                    $" (gas: {UnitConversion.Convert.FromWei(zapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                    $" {_Settings.GasSymbol}, txn ID: {zapTxnReceipt.TransactionHash})");
 
                 return true;
             }
             catch (AggregateException ex)
             {
-                Program.WriteLineLog("Failed: Zap reward to LP");
+                _Log.WriteLine("Failed: Zap reward to LP");
 
                 if (ex.InnerExceptions.Any(e => e is TaskCanceledException))
-                    Program.WriteLineLog("Timeout: {0:n0} s", _Settings.RPC_Timeout);
+                    _Log.WriteLine($"Timeout: {_Settings.RPC_Timeout:n0} s");
                 else
-                    Program.WriteLineLog(ex.ToString());
+                    _Log.WriteLine(ex.ToString());
 
                 return false;
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog("Failed: Zap reward to LP");
-                Program.WriteLineLog(ex.ToString());
+                _Log.WriteLine("Failed: Zap reward to LP");
+                _Log.WriteLine(ex.ToString());
 
                 return false;
             }

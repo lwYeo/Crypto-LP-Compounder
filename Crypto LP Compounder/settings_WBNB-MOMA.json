@@ -1,5 +1,6 @@
 {
   "Name": "Instance_1",
+  "IsLogAll": true,
   "WebApiURL": "http://127.0.0.1:5050",
   "RPC_URL": "https://bsc-dataseed1.binance.org/",
   "RPC_Timeout": 120,

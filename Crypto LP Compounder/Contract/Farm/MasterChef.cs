@@ -30,6 +30,7 @@ namespace Crypto_LP_Compounder.Contract.Farm
 {
     internal abstract class MasterChef
     {
+        protected readonly Log _Log;
         protected readonly Settings _Settings;
         protected readonly Web3 _Web3;
         protected readonly ERC20 _RewardToken;
@@ -39,15 +40,16 @@ namespace Crypto_LP_Compounder.Contract.Farm
         protected readonly ContractHandler _ContractHandler;
         protected readonly UniswapV2.Router _Router;
 
-        public MasterChef(Settings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken)
+        public MasterChef(Log log, Settings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken)
         {
+            _Log = log;
             _Settings = settings;
             _Web3 = web3;
             _Router = router;
             _RewardToken = rewardToken;
-            _TokenA = new(_Settings, _Web3, _Settings.LiquidityPool.TokenA_Contract);
-            _TokenB = new(_Settings, _Web3, _Settings.LiquidityPool.TokenB_Contract);
-            _LiquidityToken = new(_Settings, _Web3, _Settings.LiquidityPool.LP_Contract);
+            _TokenA = new(_Log, _Settings, _Web3, _Settings.LiquidityPool.TokenA_Contract);
+            _TokenB = new(_Log, _Settings, _Web3, _Settings.LiquidityPool.TokenB_Contract);
+            _LiquidityToken = new(_Log, _Settings, _Web3, _Settings.LiquidityPool.LP_Contract);
             _ContractHandler = _Web3.Eth.GetContractHandler(_Settings.Farm.FarmContract);
 
             CurrentAPR = new() { Symbol = "%" };
@@ -131,23 +133,24 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
         public bool HandleDepositLpToFarm(BigInteger lpAmount, ref bool isToPostpone)
         {
-            Program.WriteLineLog();
+            _Log.WriteLine();
 
             if (_Settings.Farm.ProcessAllRewards)
                 lpAmount = _LiquidityToken.GetBalanceTask(_Settings.Wallet.Address).Result;
 
             if (lpAmount.IsZero)
             {
-                Program.WriteLineLog("LP balance is zero, postpone deposit to farm");
+                _Log.WriteLine("LP balance is zero, postpone deposit to farm");
 
                 isToPostpone = true;
 
                 return false;
             }
 
-            Program.WriteLineLog("Depositing {0:n10} LP tokens to farm...",
-                (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(lpAmount, UnitConversion.EthUnit.Wei) /
-                    BigDecimal.Pow(10, _Settings.LiquidityPool.LP_Decimals)));
+            _Log.WriteLine(
+                $"Depositing" +
+                $" {(decimal)(UnitConversion.Convert.FromWeiToBigDecimal(lpAmount, UnitConversion.EthUnit.Wei) / BigDecimal.Pow(10, _Settings.LiquidityPool.LP_Decimals)):n10}" +
+                $" LP tokens to farm...");
             try
             {
                 BigInteger gasPrice = _Settings.GetGasPrice(_Web3);
@@ -164,10 +167,10 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
                 if (depositLpReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Deposit LP tokens (gas: {0:n10} {1}, txn ID: {2})",
-                        UnitConversion.Convert.FromWei(depositLpReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        depositLpReceipt.TransactionHash);
+                    _Log.WriteLine(
+                        $"Failed: Deposit LP tokens (gas:" +
+                        $" {UnitConversion.Convert.FromWei(depositLpReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {depositLpReceipt.TransactionHash})");
 
                     return false;
                 }
@@ -182,30 +185,29 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
                 lpAmount = transferOutEvents.Select(l => l.Event.Value).Aggregate((currentSum, item) => currentSum + item);
 
-                Program.WriteLineLog("Success: Deposit {0:n10} LP tokens (gas: {1:n10} {2}, txn ID: {3})",
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(lpAmount, UnitConversion.EthUnit.Wei) /
-                        BigDecimal.Pow(10, _Settings.LiquidityPool.LP_Decimals)),
-                    UnitConversion.Convert.FromWei(depositLpReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                    _Settings.GasSymbol,
-                    depositLpReceipt.TransactionHash);
+                _Log.WriteLine(
+                    $"Success: Deposit" +
+                    $" {(decimal)(UnitConversion.Convert.FromWeiToBigDecimal(lpAmount, UnitConversion.EthUnit.Wei) / BigDecimal.Pow(10, _Settings.LiquidityPool.LP_Decimals)):n10}" +
+                    $" LP tokens (gas: {UnitConversion.Convert.FromWei(depositLpReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                    $" {_Settings.GasSymbol}, txn ID: {depositLpReceipt.TransactionHash})");
 
                 return true;
             }
             catch (AggregateException ex)
             {
-                Program.WriteLineLog("Failed: Deposit LP tokens to farm");
+                _Log.WriteLine("Failed: Deposit LP tokens to farm");
 
                 if (ex.InnerExceptions.Any(e => e is TaskCanceledException))
-                    Program.WriteLineLog("Timeout: {0:n0} s", _Settings.RPC_Timeout);
+                    _Log.WriteLine($"Timeout: {_Settings.RPC_Timeout:n0} s");
                 else
-                    Program.WriteLineLog(ex.ToString());
+                    _Log.WriteLine(ex.ToString());
 
                 return false;
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog("Failed: Deposit LP tokens to farm");
-                Program.WriteLineLog(ex.ToString());
+                _Log.WriteLine("Failed: Deposit LP tokens to farm");
+                _Log.WriteLine(ex.ToString());
 
                 return false;
             }
@@ -213,8 +215,8 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
         public bool HandleHarvest(ref BigInteger rewardHarvestAmt)
         {
-            Program.WriteLineLog();
-            Program.WriteLineLog("Harvesting reward...");
+            _Log.WriteLine();
+            _Log.WriteLine("Harvesting reward...");
             try
             {
                 rewardHarvestAmt = BigInteger.Zero;
@@ -237,17 +239,17 @@ namespace Crypto_LP_Compounder.Contract.Farm
                         GetEvent<DTO.ERC20.TransferEventDTO>().
                         DecodeAllEventsForEvent(harvestResult.Logs);
 
-                    Program.WriteLineLog("Success: Harvest reward (gas: {0:n10} {1}, txn ID: {2})",
-                        UnitConversion.Convert.FromWei(harvestResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        harvestResult.TransactionHash);
+                    _Log.WriteLine(
+                        $"Success: Harvest reward" +
+                        $" (gas: {UnitConversion.Convert.FromWei(harvestResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {harvestResult.TransactionHash})");
                 }
                 else
                 {
-                    Program.WriteLineLog("Failed: Harvest reward, gas: {0:n10} {1}, txn ID: {2})",
-                        UnitConversion.Convert.FromWei(harvestResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        harvestResult.TransactionHash);
+                    _Log.WriteLine(
+                        $"Failed: Harvest reward," +
+                        $" gas: {UnitConversion.Convert.FromWei(harvestResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {harvestResult.TransactionHash})");
 
                     return false;
                 }
@@ -256,11 +258,10 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
                 rewardHarvestAmt = harvestLogs.Select(l => l.Event.Value).Aggregate((currentSum, item) => currentSum + item);
 
-                Program.WriteLineLog("Reward harvested/balance: {0:n10} / {1:n10}",
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardHarvestAmt, UnitConversion.EthUnit.Wei) /
-                        BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)),
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardBalanceTask.Result, UnitConversion.EthUnit.Wei) /
-                        BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)));
+                _Log.WriteLine(
+                    $"Reward harvested/balance:" +
+                    $" {(decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardHarvestAmt, UnitConversion.EthUnit.Wei) / BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)):n10} /" +
+                    $" {(decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardBalanceTask.Result, UnitConversion.EthUnit.Wei) / BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)):n10}");
 
                 if (rewardHarvestAmt.IsZero || rewardHarvestAmt > rewardBalanceTask.Result) return false;
 
@@ -270,19 +271,19 @@ namespace Crypto_LP_Compounder.Contract.Farm
             }
             catch (AggregateException ex)
             {
-                Program.WriteLineLog("Failed: Harvesting reward");
+                _Log.WriteLine("Failed: Harvesting reward");
 
                 if (ex.InnerExceptions.Any(e => e is TaskCanceledException))
-                    Program.WriteLineLog("Timeout: {0:n0} s", _Settings.RPC_Timeout);
+                    _Log.WriteLine($"Timeout: {_Settings.RPC_Timeout:n0} s");
                 else
-                    Program.WriteLineLog(ex.ToString());
+                    _Log.WriteLine(ex.ToString());
 
                 return false;
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog("Failed: Harvesting reward");
-                Program.WriteLineLog(ex.ToString());
+                _Log.WriteLine("Failed: Harvesting reward");
+                _Log.WriteLine(ex.ToString());
 
                 return false;
             }
@@ -290,8 +291,8 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
         public bool HandleCheckReward(BigInteger estimateGasUse, ref BigInteger rewardHarvestAmt, ref bool isPostpone)
         {
-            Program.WriteLineLog();
-            Program.WriteLog("Getting farm reward count... ");
+            _Log.WriteLine();
+            _Log.Write("Getting farm reward count... ");
             try
             {
                 rewardHarvestAmt = GetPendingRewardTask().Result;
@@ -299,17 +300,15 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 BigInteger rewardInGas =
                     _Router.GetAmountsOutTask(rewardHarvestAmt, _Settings.Farm.RewardContract, _Settings.WETH_Contract).Result;
 
-                Program.WriteLineLog("{0:n10} ({1:n10} {2})",
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardHarvestAmt, UnitConversion.EthUnit.Wei) /
-                        BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)),
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardInGas, UnitConversion.EthUnit.Wei) /
-                        BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)),
-                    _Settings.GasSymbol);
+                _Log.WriteLine(
+                    $"{(decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardHarvestAmt, UnitConversion.EthUnit.Wei) / BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)):n10}" +
+                    $" ({(decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardInGas, UnitConversion.EthUnit.Wei) / BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)):n10}" +
+                    $" {_Settings.GasSymbol})");
 
                 if (rewardHarvestAmt.IsZero || ((rewardInGas - estimateGasUse) <= BigInteger.One))
                 {
-                    Program.WriteLineLog();
-                    Program.WriteLineLog("Gas is greater then reward, postponing...");
+                    _Log.WriteLine();
+                    _Log.WriteLine("Gas is greater then reward, postponing...");
 
                     isPostpone = true;
 
@@ -320,9 +319,9 @@ namespace Crypto_LP_Compounder.Contract.Farm
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog();
-                Program.WriteLineLog("Failed: Get farm reward count");
-                Program.WriteLineLog(ex.ToString());
+                _Log.WriteLine();
+                _Log.WriteLine("Failed: Get farm reward count");
+                _Log.WriteLine(ex.ToString());
 
                 return false;
             }
@@ -341,8 +340,8 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 tokenValueBEthTask,
                 valuePerLpOffsetEthTask;
 
-            Program.WriteLineLog();
-            Program.WriteLineLog("Getting token values...");
+            _Log.WriteLine();
+            _Log.WriteLine("Getting token values...");
             try
             {
                 if (string.IsNullOrWhiteSpace(_Settings.USD_Contract))
@@ -386,28 +385,22 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 Reward.ChainValue.Value = (decimal)rewardValueEth.Result;
                 Reward.FiatValue.Value = (decimal)(rewardValueEth.Result * ethToUsdTask.Result);
 
-                Program.WriteLineLog("Reward value: {0:n2} USD / {1:n10} {2}",
-                    Reward.FiatValue.Value,
-                    Reward.ChainValue.Value,
-                    _Settings.GasSymbol);
+                _Log.WriteLine(
+                    $"Reward value: {Reward.FiatValue.Value:n2} {Reward.FiatValue.Symbol} / {Reward.ChainValue.Value:n10} {_Settings.GasSymbol}");
 
                 TokenA.ChainValue.Value = (decimal)tokenValueAEthTask.Result;
                 TokenA.FiatValue.Value = (decimal)(tokenValueAEthTask.Result * ethToUsdTask.Result);
 
-                Program.WriteLineLog("Token A value: {0:n2} USD / {1:n10} {2}",
-                    TokenA.FiatValue.Value,
-                    TokenA.ChainValue.Value,
-                    _Settings.GasSymbol);
+                _Log.WriteLine(
+                    $"Token A value: {TokenA.FiatValue.Value:n2} {TokenA.FiatValue.Symbol} / {TokenA.ChainValue.Value:n10} {_Settings.GasSymbol}");
 
                 TokenB.ChainValue.Value = (decimal)tokenValueBEthTask.Result;
                 TokenB.FiatValue.Value = (decimal)(tokenValueBEthTask.Result * ethToUsdTask.Result);
 
-                Program.WriteLineLog("Token B value: {0:n2} USD / {1:n10} {2}",
-                    TokenB.FiatValue.Value,
-                    TokenB.ChainValue.Value,
-                    _Settings.GasSymbol);
+                _Log.WriteLine(
+                    $"Token B value: {TokenB.FiatValue.Value:n2} {TokenB.FiatValue.Symbol} / {TokenB.ChainValue.Value:n10} {_Settings.GasSymbol}");
 
-                Program.WriteLog("Getting pending rewards... ");
+                _Log.Write("Getting pending rewards... ");
 
                 Task<BigDecimal> pendingReward =
                     GetPendingRewardTask().
@@ -418,22 +411,21 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 CurrentPendingReward.ChainValue.Value = (decimal)(pendingReward.Result * rewardValueEth.Result);
                 CurrentPendingReward.FiatValue.Value = (decimal)(pendingReward.Result * rewardValueEth.Result * ethToUsdTask.Result);
 
-                Program.WriteLineLog("{0:n10} ({1:n2} USD / {2:n10} {3})",
-                    CurrentPendingReward.Value.Value,
-                    CurrentPendingReward.FiatValue.Value,
-                    CurrentPendingReward.ChainValue.Value,
-                    _Settings.GasSymbol);
+                _Log.WriteLine(
+                    $"{CurrentPendingReward.Value.Value:n10}" +
+                    $" ({CurrentPendingReward.FiatValue.Value:n2} {CurrentPendingReward.FiatValue.Symbol} /" +
+                    $" {CurrentPendingReward.ChainValue.Value:n10} {_Settings.GasSymbol})");
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog();
-                Program.WriteLineLog("Failed: Get token values");
-                Program.WriteLineLog(ex.ToString());
+                _Log.WriteLine();
+                _Log.WriteLine("Failed: Get token values");
+                _Log.WriteLine(ex.ToString());
 
                 return false;
             }
 
-            Program.WriteLog("Getting deposit value... ");
+            _Log.Write("Getting deposit value... ");
             try
             {
                 userDepositSizeTask = GetUserInfoTask().
@@ -477,11 +469,9 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 CurrentDeposit.ChainValue.Value = (decimal)userDepositAmtEthTask.Result;
                 CurrentDeposit.FiatValue.Value = (decimal)(userDepositAmtEthTask.Result * ethToUsdTask.Result);
 
-                Program.WriteLineLog("{0:n10} ({1:n2} USD / {2:n10} {3})",
-                    CurrentDeposit.Value.Value,
-                    CurrentDeposit.FiatValue.Value,
-                    CurrentDeposit.ChainValue.Value,
-                    _Settings.GasSymbol);
+                _Log.WriteLine(
+                    $"{CurrentDeposit.Value.Value:n10} ({CurrentDeposit.FiatValue.Value:n2} USD /" +
+                    $" {CurrentDeposit.ChainValue.Value:n10} {_Settings.GasSymbol})");
 
                 BigDecimal underlyingTokenAEth =
                     (userDepositAmtEthTask.Result * tokenAInLPEthTask.Result / (tokenAInLPEthTask.Result + tokenBInLPEthTask.Result));
@@ -493,31 +483,27 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 UnderlyingTokenA_Deposit.ChainValue.Value = (decimal)underlyingTokenAEth;
                 UnderlyingTokenA_Deposit.FiatValue.Value = (decimal)(underlyingTokenAEth * ethToUsdTask.Result);
 
-                Program.WriteLineLog("Underlying Token A value: {0:n10} ({1:n2} USD / {2:n10} {3})",
-                    UnderlyingTokenA_Deposit.Value.Value,
-                    UnderlyingTokenA_Deposit.FiatValue.Value,
-                    UnderlyingTokenA_Deposit.ChainValue.Value,
-                    _Settings.GasSymbol);
+                _Log.WriteLine(
+                    $"Underlying Token A value: {UnderlyingTokenA_Deposit.Value.Value:n10} ({UnderlyingTokenA_Deposit.FiatValue.Value:n2} USD /" +
+                    $" {UnderlyingTokenA_Deposit.ChainValue.Value:n10} {_Settings.GasSymbol})");
 
                 UnderlyingTokenB_Deposit.Value.Value = (decimal)(underlyingTokenBEth / tokenValueBEthTask.Result);
                 UnderlyingTokenB_Deposit.ChainValue.Value = (decimal)underlyingTokenBEth;
                 UnderlyingTokenB_Deposit.FiatValue.Value = (decimal)(underlyingTokenBEth * ethToUsdTask.Result);
 
-                Program.WriteLineLog("Underlying Token B value: {0:n10} ({1:n2} USD / {2:n10} {3})",
-                    UnderlyingTokenB_Deposit.Value.Value,
-                    UnderlyingTokenB_Deposit.FiatValue.Value,
-                    UnderlyingTokenB_Deposit.ChainValue.Value,
-                    _Settings.GasSymbol);
+                _Log.WriteLine(
+                    $"Underlying Token B value: {UnderlyingTokenB_Deposit.Value.Value:n10} ({UnderlyingTokenB_Deposit.FiatValue.Value:n2} USD /" +
+                    $" {UnderlyingTokenB_Deposit.ChainValue.Value:n10} {_Settings.GasSymbol})");
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog();
-                Program.WriteLineLog("Failed: Get deposit value");
-                Program.WriteLineLog(ex.ToString());
+                _Log.WriteLine();
+                _Log.WriteLine("Failed: Get deposit value");
+                _Log.WriteLine(ex.ToString());
 
                 return false;
             }
-            Program.WriteLog("Calculating APR... ");
+            _Log.Write("Calculating APR... ");
             BigDecimal apr = 0;
             try
             {
@@ -553,29 +539,27 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
                 if (apr > 0)
                 {
-                    Program.WriteLineLog("{0:n3} % ({1:n2} USD / {2:n10} {3})",
-                        (decimal)apr,
-                        (decimal)(userDepositAmtEthTask.Result * ethToUsdTask.Result * apr / 100),
-                        (decimal)(userDepositAmtEthTask.Result * apr / 100),
-                        _Settings.GasSymbol);
+                    _Log.WriteLine(
+                        $"{(decimal)apr:n3} % ({(decimal)(userDepositAmtEthTask.Result * ethToUsdTask.Result * apr / 100):n2} USD /" +
+                        $" {(decimal)(userDepositAmtEthTask.Result * apr / 100):n10} {_Settings.GasSymbol})");
                 }
                 else
                 {
-                    Program.WriteLineLog();
-                    Program.WriteLineLog("Failed: Calculate APR");
+                    _Log.WriteLine();
+                    _Log.WriteLine("Failed: Calculate APR");
 
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog();
-                Program.WriteLineLog("Failed: Calculate APR");
-                Program.WriteLineLog(ex.ToString());
+                _Log.WriteLine();
+                _Log.WriteLine("Failed: Calculate APR");
+                _Log.WriteLine(ex.ToString());
 
                 return false;
             }
-            Program.WriteLog("Calculating optimal APY... ");
+            _Log.Write("Calculating optimal APY... ");
             try
             {
                 decimal optimalApy = 0;
@@ -607,25 +591,20 @@ namespace Crypto_LP_Compounder.Contract.Farm
                     BigDecimal optimalEthPerYr = userDepositAmtEthTask.Result * optimalApy / 100;
                     BigDecimal optimalUsdPerYr = optimalEthPerYr * ethToUsdTask.Result;
 
-                    Program.WriteLineLog(
-                        (optimalApy < 1000 ? "{0:n2}" : "{0:n0}") +
-                            " % ({1:n0} compounds / " +
-                            (optimalUsdPerYr < 1000 ? "{2:n2}" : "{2:n0}") +
-                            " USD / " +
-                            (optimalEthPerYr < 1000 ? "{3:n10}" : "{3:n0}") +
-                            " {4} per year)",
-                        optimalApy,
-                        compoundPerYear,
-                        (decimal)optimalUsdPerYr,
-                        (decimal)optimalEthPerYr,
-                        _Settings.GasSymbol);
+                    _Log.WriteLine(
+                        (optimalApy < 1000 ? $"{optimalApy:n2}" : $"{optimalApy:n0}") +
+                            $" % ({compoundPerYear:n0} compounds / " +
+                            (optimalUsdPerYr < 1000 ? $"{(decimal)optimalUsdPerYr:n2}" : $"{(decimal)optimalUsdPerYr:n0}") +
+                            $" USD / " +
+                            (optimalEthPerYr < 1000 ? $"{(decimal)optimalEthPerYr:n10}" : $"{_Settings.GasSymbol:n0}") +
+                            $" {4} per year)");
                 }
                 else
                 {
                     OptimalAPY.Value = 0;
                     OptimalCompoundsPerYear = 0;
 
-                    Program.WriteLineLog("Failed: Calculate optimal APY");
+                    _Log.WriteLine("Failed: Calculate optimal APY");
 
                     return false;
                 }
@@ -634,9 +613,9 @@ namespace Crypto_LP_Compounder.Contract.Farm
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog();
-                Program.WriteLineLog("Failed: Calculate optimal APY");
-                Program.WriteLineLog(ex.ToString());
+                _Log.WriteLine();
+                _Log.WriteLine("Failed: Calculate optimal APY");
+                _Log.WriteLine(ex.ToString());
 
                 return false;
             }

@@ -35,18 +35,18 @@ namespace Crypto_LP_Compounder
         {
             Settings settings;
 
-            Program.WriteLog("Loading settings... ");
+            Program.LogConsole("Loading settings... ");
 
             string filePath = System.IO.Path.Combine(AppContext.BaseDirectory, FileName);
 
             if (System.IO.File.Exists(filePath))
             {
                 settings = Json.DeserializeFromFile<Settings>(filePath);
-                Program.WriteLineLog("Done!");
+                Program.LogLineConsole("Done!");
             }
             else
             {
-                Program.WriteLineLog("File not found!");
+                Program.LogLineConsole("File not found!");
                 settings = new();
             }
 
@@ -54,14 +54,18 @@ namespace Crypto_LP_Compounder
 
             if (isSettingChanged)
             {
-                Program.CreateLineBreak();
+                Program.LogLineBreakConsole();
 
                 if (Json.SerializeToFile(settings, FileName))
-                    Program.WriteLineLog("Settings saved");
+                    Program.LogLineConsole("Settings saved");
                 else
-                    Program.ExitWithErrorMessage(1, "Failed to save settings");
+                {
+                    Program.LogLineConsole("Failed to save settings");
+                    Program.ExitWithErrorCode(1);
+                }
 
-                Program.WriteLog("Press any key to continue...");
+                Program.LogConsole("Press any key to continue...");
+                Program.FlushConsoleLogsAsync().Wait();
                 Console.Read();
 
                 Console.Clear();
@@ -72,15 +76,16 @@ namespace Crypto_LP_Compounder
         private static void CheckSettings(Settings settings, out bool isSettingChanged)
         {
             isSettingChanged = false;
-            Program.WriteLineLog();
-            Program.WriteLineLog("Checking settings...");
-            Program.WriteLineLog();
+            Program.LogLineConsole();
+            Program.LogLineConsole("Checking settings...");
+            Program.LogLineConsole();
             try
             {
                 while (string.IsNullOrWhiteSpace(settings.Name))
                 {
-                    Program.WriteLineLog("Instance name cannot be empty!");
-                    Program.WriteLog("New instance name > ");
+                    Program.LogLineConsole("Instance name cannot be empty!");
+                    Program.LogConsole("New instance name > ");
+                    Program.FlushConsoleLogsAsync().Wait();
                     Program.EnableQuickEdit();
 
                     settings.Name = Console.ReadLine();
@@ -103,8 +108,9 @@ namespace Crypto_LP_Compounder
 
                 while (settings.FixedGasPriceGwei < 0.0f)
                 {
-                    Program.WriteLineLog("Invalid fixed gas price! Must be >= 0.0 (0 for disable)");
-                    Program.WriteLog("New fixed gas price (Gwei) > ");
+                    Program.LogLineConsole("Invalid fixed gas price! Must be >= 0.0 (0 for disable)");
+                    Program.LogConsole("New fixed gas price (Gwei) > ");
+                    Program.FlushConsoleLogsAsync().Wait();
                     Program.EnableQuickEdit();
 
                     if (float.TryParse(Console.ReadLine(), out float gasPrice))
@@ -116,8 +122,9 @@ namespace Crypto_LP_Compounder
 
                 while (settings.MinGasPriceGwei < 0.0f)
                 {
-                    Program.WriteLineLog("Invalid minimum gas price! Must be >= 0.0");
-                    Program.WriteLog("New minimum gas price (Gwei) > ");
+                    Program.LogLineConsole("Invalid minimum gas price! Must be >= 0.0");
+                    Program.LogConsole("New minimum gas price (Gwei) > ");
+                    Program.FlushConsoleLogsAsync().Wait();
                     Program.EnableQuickEdit();
 
                     if (float.TryParse(Console.ReadLine(), out float minGasPrice))
@@ -129,8 +136,9 @@ namespace Crypto_LP_Compounder
 
                 while (string.IsNullOrWhiteSpace(settings.GasSymbol))
                 {
-                    Program.WriteLineLog("Gas symbol is empty!");
-                    Program.WriteLog("New gas symbol (e.g. ETH) > ");
+                    Program.LogLineConsole("Gas symbol is empty!");
+                    Program.LogConsole("New gas symbol (e.g. ETH) > ");
+                    Program.FlushConsoleLogsAsync().Wait();
                     Program.EnableQuickEdit();
 
                     settings.GasSymbol = Console.ReadLine();
@@ -141,8 +149,9 @@ namespace Crypto_LP_Compounder
 
                 while (settings.LiquidityPool.Slippage < 0.1f)
                 {
-                    Program.WriteLineLog("Invalid slippage! Must be >= 0.1");
-                    Program.WriteLog("New slippage (%) > ");
+                    Program.LogLineConsole("Invalid slippage! Must be >= 0.1");
+                    Program.LogConsole("New slippage (%) > ");
+                    Program.FlushConsoleLogsAsync().Wait();
                     Program.EnableQuickEdit();
 
                     if (float.TryParse(Console.ReadLine(), out float slippage))
@@ -167,8 +176,9 @@ namespace Crypto_LP_Compounder
 
                 if (!string.IsNullOrWhiteSpace(keyIssue))
                 {
-                    Program.WriteLineLog("Private key field is " + keyIssue);
-                    Program.WriteLog("New private key > ");
+                    Program.LogLineConsole("Private key field is " + keyIssue);
+                    Program.LogConsole("New private key > ");
+                    Program.FlushConsoleLogsAsync().Wait();
                     Program.EnableQuickEdit();
 
                     settings.Wallet.PrivateKeyCrypt = Crypto_Crypt.Factory.Instance.Encrypt(Console.ReadLine().Trim());
@@ -177,14 +187,14 @@ namespace Crypto_LP_Compounder
                     isSettingChanged = true;
                 }
 
-                Program.WriteLineLog("Settings checked");
-                Program.WriteLineLog();
+                Program.LogLineConsole("Settings checked");
+                Program.LogLineConsole();
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog("Checking settings failed");
-
-                Program.ExitWithErrorMessage(2, ex.ToString());
+                Program.LogLineConsole("Checking settings failed");
+                Program.LogLineConsole(ex.ToString());
+                Program.ExitWithErrorCode(2);
             }
         }
 
@@ -213,18 +223,19 @@ namespace Crypto_LP_Compounder
             {
                 while (!_AddressUtil.IsValidAddressLength(address) || !_AddressUtil.IsValidEthereumAddressHexFormat(address))
                 {
-                    Program.WriteLineLog();
-                    Program.WriteLineLog("{0}: Invalid address provided, ensure address is 42 characters long (including '0x')", parameter);
+                    Program.LogLineConsole();
+                    Program.LogLineConsole($"{parameter}: Invalid address provided, ensure address is 42 characters long (including '0x')");
 
-                    if (isOptional) Program.WriteLineLog("Or leave blank to disable");
+                    if (isOptional) Program.LogLineConsole("Or leave blank to disable");
 
-                    Program.WriteLog("Enter new address > ");
+                    Program.LogConsole("Enter new address > ");
+                    Program.FlushConsoleLogsAsync().Wait();
                     Program.EnableQuickEdit();
 
                     address = Console.ReadLine().Trim();
 
                     Program.DisableQuickEdit();
-                    Program.WriteLineLog();
+                    Program.LogLineConsole();
 
                     if (isOptional && string.IsNullOrWhiteSpace(address)) return;
                 }
@@ -240,8 +251,8 @@ namespace Crypto_LP_Compounder
 
                 parentObject.GetType().GetProperty(name).SetValue(parentObject, address);
 
-                Program.WriteLineLog("{0}: Address updated due to checksum ({1})", parameter, address);
-                Program.WriteLineLog();
+                Program.LogLineConsole($"{parameter}: Address updated due to checksum ({address})");
+                Program.LogLineConsole();
 
                 isSettingChange = true;
             }
@@ -292,50 +303,83 @@ namespace Crypto_LP_Compounder
         #region Properties and Subtypes
 
         public string Name { get; set; } = "Instance_1";
+
+        public bool IsLogAll { get; set; } = true;
+
         public string WebApiURL { get; set; } = string.Empty;
+
         public string RPC_URL { get; set; } = string.Empty;
+
         public uint RPC_Timeout { get; set; } = 120;
+
         public float GasPriceOffsetGwei { get; set; } = 0.0f;
+
         public float FixedGasPriceGwei { get; set; } = 0.0f;
+
         public float MinGasPriceGwei { get; set; } = 0.0f;
+
         public string GasSymbol { get; set; } = "ETH";
+
         public string WETH_Contract { get; set; } = string.Empty;
+
         public string USD_Contract { get; set; } = string.Empty;
+
         public uint USD_Decimals { get; set; } = 6;
+
         public WalletParams Wallet { get; set; } = new();
+
         public LiquidityPoolParams LiquidityPool { get; set; } = new();
+
         public FarmParams Farm { get; set; } = new();
 
         public class WalletParams
         {
             public string Address { get; set; } = string.Empty;
+
             public string PrivateKeyCrypt { get; set; } = string.Empty;
         }
 
         public class LiquidityPoolParams
         {
             public string TokenA_Contract { get; set; } = string.Empty;
+
             public uint TokenA_Decimals { get; set; } = 18;
+
             public string TokenB_Contract { get; set; } = string.Empty;
+
             public uint TokenB_Decimals { get; set; } = 18;
+
             public string LP_Contract { get; set; } = string.Empty;
+
             public uint LP_Decimals { get; set; } = 18;
+
             public string FactoryContract { get; set; } = string.Empty;
+
             public string RouterContract { get; set; } = string.Empty;
+
             public float Slippage { get; set; } = 1.0f;
+
             public float TokenA_Offset { get; set; } = 0.0f;
+
             public float TokenB_Offset { get; set; } = 0.0f;
+
             public string ZapContract { get; set; } = string.Empty;
+
             public string TaxFreeContract { get; set; } = string.Empty;
         }
 
         public class FarmParams
         {
             public string FarmType { get; set; } = string.Empty;
+
             public string FarmContract { get; set; } = string.Empty;
+
             public string RewardContract { get; set; } = string.Empty;
+
             public uint RewardDecimals { get; set; } = 18;
+
             public uint FarmPoolID { get; set; } = 0;
+
             public bool ProcessAllRewards { get; set; } = false;
         }
 

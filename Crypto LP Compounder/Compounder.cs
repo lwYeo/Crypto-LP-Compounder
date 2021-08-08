@@ -125,9 +125,13 @@ namespace Crypto_LP_Compounder
 
         TokenValue ICompounder.Reward => _Farm.Reward;
 
+        public Log Log { get; }
+
         public Compounder(Settings settings)
         {
             _Settings = settings;
+
+            Log = new(settings);
 
             if (!string.IsNullOrWhiteSpace(_Settings.LiquidityPool.ZapContract))
                 DefaultTxnCountPerProcess = 12;
@@ -139,10 +143,10 @@ namespace Crypto_LP_Compounder
             _LastProcessTxnCount = DefaultTxnCountPerProcess;
             _LastEstimateGasCostPerTxn = BigInteger.Zero;
 
-            Program.CreateLineBreak();
-            Program.WriteLineLog("Autocompounder settings");
-            Program.CreateLineBreak();
-            Program.WriteLineLog();
+            Log.WriteLineBreak();
+            Log.WriteLine("Autocompounder settings");
+            Log.WriteLineBreak();
+            Log.WriteLine();
 
             float? fixedGasGwei = _Settings.FixedGasPriceGwei <= 0.0f ? null : _Settings.FixedGasPriceGwei;
             string sFixedGasGwei = fixedGasGwei?.ToString("#.# Gwei") ?? "auto";
@@ -151,41 +155,44 @@ namespace Crypto_LP_Compounder
             string taxFreeContract =
                 string.IsNullOrWhiteSpace(_Settings.LiquidityPool.TaxFreeContract) ? "disabled" : _Settings.LiquidityPool.TaxFreeContract;
 
-            Program.WriteLineLog("Name:              " + _Settings.Name);
-            Program.WriteLineLog("WebApiURL:         " + _Settings.WebApiURL);
-            Program.WriteLineLog("RPC URL:           " + _Settings.RPC_URL);
-            Program.WriteLineLog("RPC_Timeout:       " + _Settings.RPC_Timeout.ToString() + " s");
-            Program.WriteLineLog("GasPriceOffsetGwei:" + _Settings.GasPriceOffsetGwei.ToString() + " Gwei");
-            Program.WriteLineLog("FixedGasPriceGwei: " + sFixedGasGwei);
-            Program.WriteLineLog("MinGasPriceGwei:   " + _Settings.GetUserMinGasPrice().ToString() + " Gwei");
-            Program.WriteLineLog("GasSymbol:         " + _Settings.GasSymbol);
-            Program.WriteLineLog("WETH_Contract:     " + _Settings.WETH_Contract);
-            Program.WriteLineLog("USD_Contract:      " + _Settings.USD_Contract);
-            Program.WriteLineLog("USD_Decimals:      " + _Settings.USD_Decimals);
-            Program.WriteLineLog("WalletAddress      " + _Settings.Wallet.Address);
-            Program.WriteLineLog("TokenA_Contract:   " + _Settings.LiquidityPool.TokenA_Contract);
-            Program.WriteLineLog("TokenA_Decimals:   " + _Settings.LiquidityPool.TokenA_Decimals);
-            Program.WriteLineLog("TokenB_Contract:   " + _Settings.LiquidityPool.TokenB_Contract);
-            Program.WriteLineLog("TokenB_Decimals:   " + _Settings.LiquidityPool.TokenB_Decimals);
-            Program.WriteLineLog("LP_Contract:       " + _Settings.LiquidityPool.LP_Contract);
-            Program.WriteLineLog("LP_Decimals:       " + _Settings.LiquidityPool.LP_Decimals);
-            Program.WriteLineLog("FactoryContract:   " + _Settings.LiquidityPool.FactoryContract);
-            Program.WriteLineLog("RouterContract:    " + _Settings.LiquidityPool.RouterContract);
-            Program.WriteLineLog("Slippage:          " + _Settings.LiquidityPool.Slippage.ToString() + " %");
-            Program.WriteLineLog("TokenA_Offset:     " + _Settings.LiquidityPool.TokenA_Offset.ToString() + " %");
-            Program.WriteLineLog("TokenB_Offset:     " + _Settings.LiquidityPool.TokenB_Offset.ToString() + " %");
-            Program.WriteLineLog("ZapContract:       " + zapContract);
-            Program.WriteLineLog("TaxFreeContract:   " + taxFreeContract);
-            Program.WriteLineLog("FarmType:          " + _Settings.Farm.FarmType);
-            Program.WriteLineLog("FarmContract:      " + _Settings.Farm.FarmContract);
-            Program.WriteLineLog("RewardContract:    " + _Settings.Farm.RewardContract);
-            Program.WriteLineLog("PoolID:            " + _Settings.Farm.FarmPoolID.ToString());
-            Program.WriteLineLog("ProcessAllRewards: " + _Settings.Farm.ProcessAllRewards.ToString());
+            Log.WriteLine("Name:              " + _Settings.Name);
+            Log.WriteLine("WebApiURL:         " + _Settings.WebApiURL);
+            Log.WriteLine("RPC URL:           " + _Settings.RPC_URL);
+            Log.WriteLine("RPC_Timeout:       " + _Settings.RPC_Timeout.ToString() + " s");
+            Log.WriteLine("GasPriceOffsetGwei:" + _Settings.GasPriceOffsetGwei.ToString() + " Gwei");
+            Log.WriteLine("FixedGasPriceGwei: " + sFixedGasGwei);
+            Log.WriteLine("MinGasPriceGwei:   " + _Settings.GetUserMinGasPrice().ToString() + " Gwei");
+            Log.WriteLine("GasSymbol:         " + _Settings.GasSymbol);
+            Log.WriteLine("WETH_Contract:     " + _Settings.WETH_Contract);
+            Log.WriteLine("USD_Contract:      " + _Settings.USD_Contract);
+            Log.WriteLine("USD_Decimals:      " + _Settings.USD_Decimals);
+            Log.WriteLine("WalletAddress      " + _Settings.Wallet.Address);
+            Log.WriteLine("TokenA_Contract:   " + _Settings.LiquidityPool.TokenA_Contract);
+            Log.WriteLine("TokenA_Decimals:   " + _Settings.LiquidityPool.TokenA_Decimals);
+            Log.WriteLine("TokenB_Contract:   " + _Settings.LiquidityPool.TokenB_Contract);
+            Log.WriteLine("TokenB_Decimals:   " + _Settings.LiquidityPool.TokenB_Decimals);
+            Log.WriteLine("LP_Contract:       " + _Settings.LiquidityPool.LP_Contract);
+            Log.WriteLine("LP_Decimals:       " + _Settings.LiquidityPool.LP_Decimals);
+            Log.WriteLine("FactoryContract:   " + _Settings.LiquidityPool.FactoryContract);
+            Log.WriteLine("RouterContract:    " + _Settings.LiquidityPool.RouterContract);
+            Log.WriteLine("Slippage:          " + _Settings.LiquidityPool.Slippage.ToString() + " %");
+            Log.WriteLine("TokenA_Offset:     " + _Settings.LiquidityPool.TokenA_Offset.ToString() + " %");
+            Log.WriteLine("TokenB_Offset:     " + _Settings.LiquidityPool.TokenB_Offset.ToString() + " %");
+            Log.WriteLine("ZapContract:       " + zapContract);
+            Log.WriteLine("TaxFreeContract:   " + taxFreeContract);
+            Log.WriteLine("FarmType:          " + _Settings.Farm.FarmType);
+            Log.WriteLine("FarmContract:      " + _Settings.Farm.FarmContract);
+            Log.WriteLine("RewardContract:    " + _Settings.Farm.RewardContract);
+            Log.WriteLine("PoolID:            " + _Settings.Farm.FarmPoolID.ToString());
+            Log.WriteLine("ProcessAllRewards: " + _Settings.Farm.ProcessAllRewards.ToString());
 
             Account account = new(Crypto_Crypt.Factory.Instance.Decrypt(_Settings.Wallet.PrivateKeyCrypt));
 
             if (!account.Address.Equals(_Settings.Wallet.Address, StringComparison.OrdinalIgnoreCase))
-                Program.ExitWithErrorMessage(3, "Invalid wallet private key");
+            {
+                Log.WriteLine("Invalid wallet private key");
+                Program.ExitWithErrorCode(3);
+            }
 
             _Web3 = new(account, url: _Settings.RPC_URL);
 
@@ -193,21 +200,24 @@ namespace Crypto_LP_Compounder
 
             _EstimateGasPerTxn = new() { Symbol = _Settings.GasSymbol };
 
-            _RewardToken = new(_Settings, _Web3, _Settings.Farm.RewardContract);
+            _RewardToken = new(Log, _Settings, _Web3, _Settings.Farm.RewardContract);
 
-            _Factory = new(_Settings, _Web3);
-            _Router = new(_Settings, _Web3);
+            _Factory = new(Log, _Settings, _Web3);
+            _Router = new(Log, _Settings, _Web3);
 
             _Farm = _Settings.Farm.FarmType switch
             {
-                "WFTM-TOMB:TSHARE" => new Contract.Farm.TombFinance(_Settings, _Web3, _Router, _RewardToken),
-                "WFTM-YEL:YEL" => new Contract.Farm.YEL(_Settings, _Web3, _Router, _RewardToken),
-                "WBNB-MOMA:MOMA" => new Contract.Farm.MOMA(_Settings, _Web3, _Router, _RewardToken),
+                "WFTM-TOMB:TSHARE" => new Contract.Farm.TombFinance(Log, _Settings, _Web3, _Router, _RewardToken),
+                "WFTM-YEL:YEL" => new Contract.Farm.YEL(Log, _Settings, _Web3, _Router, _RewardToken),
+                "WBNB-MOMA:MOMA" => new Contract.Farm.MOMA(Log, _Settings, _Web3, _Router, _RewardToken),
                 _ => null
             };
 
             if (_Farm == null)
-                Program.ExitWithErrorMessage(4, "Invalid farm type!");
+            {
+                Log.WriteLine("Invalid farm type!");
+                Program.ExitWithErrorCode(4);
+            }
 
             _Factory.HandleCheckLiquidityPool(_Settings.LiquidityPool.LP_Contract).Wait();
         }
@@ -244,7 +254,7 @@ namespace Crypto_LP_Compounder
                 }
                 else
                 {
-                    Program.SetIsProcessingLog(true);
+                    Log.IsCompoundProcess = true;
 
                     stopwatch.Restart();
 
@@ -252,8 +262,8 @@ namespace Crypto_LP_Compounder
 
                     processTimeTaken = stopwatch.Elapsed;
 
-                    Program.WriteLineLog("Time taken: {0:n0} hr {1:mm' min 'ss' sec'}", processTimeTaken.TotalHours, processTimeTaken);
-                    Program.CreateLineBreak();
+                    Log.WriteLine($"Time taken: {processTimeTaken.TotalHours:n0} hr {processTimeTaken:mm' min 'ss' sec'}");
+                    Log.WriteLineBreak();
 
                     beginLoopTime = DateTimeOffset.Now;
 
@@ -264,7 +274,7 @@ namespace Crypto_LP_Compounder
 
                     _ = System.IO.File.WriteAllBytesAsync(statePath, stateBytes);
 
-                    Program.SetIsProcessingLog(false);
+                    Log.IsCompoundProcess = false;
                 }
 
                 nextLoopTime = beginLoopTime;
@@ -281,9 +291,9 @@ namespace Crypto_LP_Compounder
                         {
                             lastUpdate = DateTimeOffset.Now;
 
-                            Program.WriteLineLog();
-                            Program.CreateLineBreak();
-                            Program.WriteLineLog(lastUpdate.ToString("yyyy-MM-dd T HH:mm:ss K"));
+                            Log.WriteLine();
+                            Log.WriteLineBreak();
+                            Log.WriteLine(lastUpdate.ToString("yyyy-MM-dd T HH:mm:ss K"));
                         }
 
                         while (!EstimateGasCost(ref _LastEstimateGasCostPerTxn))
@@ -311,9 +321,9 @@ namespace Crypto_LP_Compounder
 
                         intervalRemaining = nextLoopTime - DateTimeOffset.Now;
 
-                        Program.WriteLineLog();
-                        Program.WriteLineLog("Next compound in {0:n0} d {1:hh' hr 'mm' min 'ss' sec'} ({2:yyyy-MM-dd T HH:mm:ss K})",
-                            intervalRemaining.TotalDays, intervalRemaining, DateTimeOffset.Now.Add(intervalRemaining));
+                        Log.WriteLine();
+                        Log.WriteLine($"Next compound in {intervalRemaining.TotalDays:n0} d {intervalRemaining:hh' hr 'mm' min 'ss' sec'}" +
+                            $" ({DateTimeOffset.Now.Add(intervalRemaining):yyyy-MM-dd T HH:mm:ss K})");
                     }
 
                     await Task.Delay(1000);
@@ -323,11 +333,11 @@ namespace Crypto_LP_Compounder
 
         private async Task ProcessCompound()
         {
-            Program.WriteLineLog();
-            Program.CreateLineBreak();
-            Program.WriteLineLog(DateTimeOffset.Now.ToString("yyyy-MM-dd T HH:mm:ss K"));
-            Program.WriteLineLog("Compound process starting...");
-            Program.CreateLineBreak();
+            Log.WriteLine();
+            Log.WriteLineBreak();
+            Log.WriteLine(DateTimeOffset.Now.ToString("yyyy-MM-dd T HH:mm:ss K"));
+            Log.WriteLine("Compound process starting...");
+            Log.WriteLineBreak();
 
             BigInteger estimateGasCostPerTxn = BigInteger.Zero;
             BigInteger rewardHarvestAmt = BigInteger.Zero;
@@ -360,7 +370,7 @@ namespace Crypto_LP_Compounder
 
                     if (retryAttempt > MaxRetries || Program.IsTerminate || isToPostpone) return;
 
-                    Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, MaxRetries);
+                    Log.WriteLine($"Retrying... ({retryAttempt}/{MaxRetries})");
                     await Task.Delay(5000);
 
                     if (Program.IsTerminate) return;
@@ -376,7 +386,7 @@ namespace Crypto_LP_Compounder
 
                     if (retryAttempt > MaxRetries || Program.IsTerminate || isToPostpone) return;
 
-                    Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, MaxRetries);
+                    Log.WriteLine($"Retrying... ({retryAttempt}/{MaxRetries})");
                     await Task.Delay(5000);
 
                     if (Program.IsTerminate) return;
@@ -396,7 +406,7 @@ namespace Crypto_LP_Compounder
 
                     if (retryAttempt > MaxRetries || Program.IsTerminate) return;
 
-                    Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, MaxRetries);
+                    Log.WriteLine($"Retrying... ({retryAttempt}/{MaxRetries})");
                     await Task.Delay(5000);
 
                     if (Program.IsTerminate) return;
@@ -418,7 +428,7 @@ namespace Crypto_LP_Compounder
 
                         if (retryAttempt > MaxRetries || Program.IsTerminate) return;
 
-                        Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, MaxRetries);
+                        Log.WriteLine($"Retrying... ({retryAttempt}/{MaxRetries})");
                         await Task.Delay(5000);
 
                         if (Program.IsTerminate) return;
@@ -436,7 +446,7 @@ namespace Crypto_LP_Compounder
 
                     if (retryAttempt > MaxRetries || Program.IsTerminate) return;
 
-                    Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, MaxRetries);
+                    Log.WriteLine($"Retrying... ({retryAttempt}/{MaxRetries})");
                     await Task.Delay(5000);
 
                     if (Program.IsTerminate) return;
@@ -453,7 +463,7 @@ namespace Crypto_LP_Compounder
 
                     if (retryAttempt > MaxRetries || Program.IsTerminate) return;
 
-                    Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, MaxRetries);
+                    Log.WriteLine($"Retrying... ({retryAttempt}/{MaxRetries})");
                     await Task.Delay(5000);
 
                     if (Program.IsTerminate) return;
@@ -477,7 +487,7 @@ namespace Crypto_LP_Compounder
 
                     if (retryAttempt > MaxRetries || Program.IsTerminate || isToPostpone) return;
 
-                    Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, MaxRetries);
+                    Log.WriteLine($"Retrying... ({retryAttempt}/{MaxRetries})");
                     await Task.Delay(5000);
 
                     if (Program.IsTerminate) return;
@@ -487,17 +497,17 @@ namespace Crypto_LP_Compounder
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog(ex.ToString());
+                Log.WriteLine(ex.ToString());
             }
             finally
             {
-                Program.WriteLineLog();
-                Program.CreateLineBreak();
+                Log.WriteLine();
+                Log.WriteLineBreak();
 
                 if (isCompounded)
-                    Program.WriteLineLog("Compound process completed");
+                    Log.WriteLine("Compound process completed");
                 else
-                    Program.WriteLineLog("Compound process incomplete due to termination");
+                    Log.WriteLine("Compound process incomplete due to termination");
 
                 _LastEstimateGasCostPerTxn = estimateGasCostPerTxn;
                 _LastProcessTxnCount = currentProcessTxnCount;
@@ -506,8 +516,8 @@ namespace Crypto_LP_Compounder
 
         private bool EstimateGasCost(ref BigInteger gasCostPerTxn)
         {
-            Program.WriteLineLog();
-            Program.WriteLog("Estimating gas cost per txn... ");
+            Log.WriteLine();
+            Log.Write("Estimating gas cost per txn... ");
             try
             {
                 BigInteger gasPrice = _Settings.GetGasPrice(_Web3);
@@ -520,25 +530,25 @@ namespace Crypto_LP_Compounder
                 {
                     gasCostPerTxn = BigInteger.One;
 
-                    Program.WriteLineLog();
-                    Program.WriteLineLog("Failed: Estimate gas cost per txn");
+                    Log.WriteLine();
+                    Log.WriteLine("Failed: Estimate gas cost per txn");
 
                     return false;
                 }
                 else
                 {
-                    Program.WriteLineLog("{0:n10} {1}",
-                        (decimal)UnitConversion.Convert.FromWeiToBigDecimal(gasCostPerTxn, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol);
+                    Log.WriteLine(
+                        $"{(decimal)UnitConversion.Convert.FromWeiToBigDecimal(gasCostPerTxn, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}");
 
                     return true;
                 }
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog();
-                Program.WriteLineLog("Failed: Estimate gas cost per txn");
-                Program.WriteLineLog(ex.ToString());
+                Log.WriteLine();
+                Log.WriteLine("Failed: Estimate gas cost per txn");
+                Log.WriteLine(ex.ToString());
 
                 return false;
             }
@@ -546,8 +556,8 @@ namespace Crypto_LP_Compounder
 
         private bool CheckAndTopUpGas(BigInteger gasAmount, ref BigInteger rewardHarvestAmt)
         {
-            Program.WriteLineLog();
-            Program.WriteLog("Checking for remaining gas... ");
+            Log.WriteLine();
+            Log.Write("Checking for remaining gas... ");
             try
             {
                 Task<BigInteger> gasBalanceTask =
@@ -555,18 +565,18 @@ namespace Crypto_LP_Compounder
 
                 decimal balance = UnitConversion.Convert.FromWei(gasBalanceTask.Result, UnitConversion.EthUnit.Ether);
 
-                Program.WriteLineLog("{0:n10} {1}", balance, _Settings.GasSymbol);
+                Log.WriteLine($"{balance:n10} {_Settings.GasSymbol}");
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog();
-                Program.WriteLineLog("Failed: Check for remaining gas");
-                Program.WriteLineLog(ex.ToString());
+                Log.WriteLine();
+                Log.WriteLine("Failed: Check for remaining gas");
+                Log.WriteLine(ex.ToString());
 
                 return false;
             }
 
-            Program.WriteLineLog("Topping up gas...");
+            Log.WriteLine("Topping up gas...");
             try
             {
                 Task<BigInteger> rewardToSwap =
@@ -594,10 +604,10 @@ namespace Crypto_LP_Compounder
 
                 if (topUpGasReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Top up gas (gas: {0:n10} {1}, txn ID: {2})",
-                        UnitConversion.Convert.FromWei(topUpGasReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        topUpGasReceipt.TransactionHash);
+                    Log.WriteLine(
+                        $"Failed: Top up gas" +
+                        $" (gas: {UnitConversion.Convert.FromWei(topUpGasReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {topUpGasReceipt.TransactionHash})");
 
                     return false;
                 }
@@ -628,27 +638,26 @@ namespace Crypto_LP_Compounder
                         (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardToSwap.Result, UnitConversion.EthUnit.Wei) /
                         BigDecimal.Pow(10, _Settings.Farm.RewardDecimals));
 
-                    Program.WriteLineLog("Success: (gas: {0:n10} {1}, txn ID: {2})",
-                        UnitConversion.Convert.FromWei(topUpGasReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        topUpGasReceipt.TransactionHash);
+                    Log.WriteLine(
+                        $"Success: (gas: {UnitConversion.Convert.FromWei(topUpGasReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {topUpGasReceipt.TransactionHash})");
 
-                    Program.WriteLineLog("Topped up gas of {0:n10} {1} with {2:n10} reward token",
-                        ethAmount, _Settings.GasSymbol, rewardSwapAmt);
+                    Log.WriteLine(
+                        $"Topped up gas of {ethAmount:n10} {_Settings.GasSymbol} with {rewardSwapAmt:n10} reward token");
 
                     return true;
                 }
                 else
                 {
-                    Program.WriteLineLog("Failed: Top up gas, Transfer event not found");
+                    Log.WriteLine("Failed: Top up gas, Transfer event not found");
 
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog("Failed: Top up gas");
-                Program.WriteLineLog(ex.ToString());
+                Log.WriteLine("Failed: Top up gas");
+                Log.WriteLine(ex.ToString());
 
                 return false;
             }
@@ -656,8 +665,8 @@ namespace Crypto_LP_Compounder
 
         private bool SendDevFee(ref BigInteger rewardHarvestAmt)
         {
-            Program.WriteLineLog();
-            Program.WriteLineLog("Sending {0:n1} % dev fee...", DevFee);
+            Log.WriteLine();
+            Log.WriteLine($"Sending {DevFee:n1} % dev fee...");
             try
             {
                 BigInteger rewardToSend = rewardHarvestAmt * (int)(DevFee * 10) / 1000;
@@ -677,10 +686,10 @@ namespace Crypto_LP_Compounder
 
                 if (transferReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Send dev fee (gas: {0:n10} {1}, txn ID: {2})",
-                        UnitConversion.Convert.FromWei(transferReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        transferReceipt.TransactionHash);
+                    Log.WriteLine(
+                        $"Failed: Send dev fee" +
+                        $" (gas: {UnitConversion.Convert.FromWei(transferReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {transferReceipt.TransactionHash})");
 
                     return false;
                 }
@@ -699,29 +708,30 @@ namespace Crypto_LP_Compounder
 
                     rewardHarvestAmt -= transferOutAmt;
 
-                    Program.WriteLineLog("Success: Sent {0:n10} reward as {1:n1} % dev fee",
-                        (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(transferOutAmt, UnitConversion.EthUnit.Wei) /
-                            BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)),
-                        DevFee);
+                    BigDecimal transferOutRewards =
+                        UnitConversion.Convert.FromWeiToBigDecimal(transferOutAmt, UnitConversion.EthUnit.Wei) / BigDecimal.Pow(10, _Settings.Farm.RewardDecimals);
 
-                    Program.WriteLineLog("(gas: {0:n10} {1}, txn ID: {2})",
-                        UnitConversion.Convert.FromWei(transferReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        transferReceipt.TransactionHash);
+                    Log.WriteLine(
+                        $"Success: Sent {(decimal)transferOutRewards:n10}" +
+                        $" reward as {DevFee:n1} % dev fee");
+
+                    Log.WriteLine(
+                        $"(gas: {UnitConversion.Convert.FromWei(transferReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {transferReceipt.TransactionHash})");
 
                     return true;
                 }
                 else
                 {
-                    Program.WriteLineLog("Failed: Send dev fee, Transfer event not found");
+                    Log.WriteLine("Failed: Send dev fee, Transfer event not found");
 
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog("Failed: Send dev fee");
-                Program.WriteLineLog(ex.ToString());
+                Log.WriteLine("Failed: Send dev fee");
+                Log.WriteLine(ex.ToString());
 
                 return false;
             }
