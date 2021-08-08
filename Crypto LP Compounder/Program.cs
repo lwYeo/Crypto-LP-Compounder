@@ -14,6 +14,7 @@
    limitations under the License.
 */
 
+using DTO;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -44,7 +45,14 @@ namespace Crypto_LP_Compounder
 
         private static Compounder _AutoCompounder;
 
+        private static readonly Func<ICompounder[]> _GetAllCompounders = () =>
+        {
+            return new ICompounder[] { _AutoCompounder };
+        };
+
         private static volatile bool _IsTerminate;
+
+        private static Settings _Settings;
 
         internal static bool IsTerminate => _IsTerminate;
 
@@ -85,7 +93,11 @@ namespace Crypto_LP_Compounder
 
             SetConsoleCtrlHandler();
 
-            _AutoCompounder = Compounder.Instance;
+            _Settings = Settings.LoadSettings();
+
+            WebApi.Program.Start(_Settings.WebApiURL, _GetAllCompounders, args);
+
+            _AutoCompounder = new(_Settings);
 
             await _AutoCompounder.Start();
 
@@ -290,21 +302,19 @@ namespace Crypto_LP_Compounder
 
         private static void SetConsoleCtrlHandler()
         {
+            AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
+            {
+                ConsoleCtrlHandler(CtrlType.CTRL_CLOSE_EVENT);
+            };
+            Console.CancelKeyPress += (s, ev) =>
+            {
+                ConsoleCtrlHandler(CtrlType.CTRL_C_EVENT);
+            };
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 _ConsoleCtrlHandler += new EventHandler(ConsoleCtrlHandler);
                 SetConsoleCtrlHandler(_ConsoleCtrlHandler, true);
-            }
-            else
-            {
-                AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
-                {
-                    ConsoleCtrlHandler(CtrlType.CTRL_CLOSE_EVENT);
-                };
-                Console.CancelKeyPress += (s, ev) =>
-                {
-                    ConsoleCtrlHandler(CtrlType.CTRL_C_EVENT);
-                };
             }
         }
 

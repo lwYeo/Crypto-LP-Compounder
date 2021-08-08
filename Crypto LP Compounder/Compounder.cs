@@ -14,6 +14,7 @@
    limitations under the License.
 */
 
+using DTO;
 using Nethereum.Contracts;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
@@ -29,10 +30,8 @@ using System.Threading.Tasks;
 
 namespace Crypto_LP_Compounder
 {
-    internal class Compounder
+    internal class Compounder : ICompounder
     {
-        public static Compounder Instance { get; } = new();
-
         private const float DevFee = 1.0f;
         private const string DevAddress = "0x9172ff7884CEFED19327aDaCe9C470eF1796105c";
         private const string BurnAddress = "0x0000000000000000000000000000000000000000";
@@ -51,9 +50,77 @@ namespace Crypto_LP_Compounder
         private BigInteger _LastEstimateGasCostPerTxn;
         private uint _LastProcessTxnCount;
 
-        private Compounder()
+        private DateTimeOffset _LastUpdate;
+        private readonly ValueSymbol _EstimateGasPerTxn;
+
+        string ICompounder.Name => _Settings.Name;
+
+        DateTimeOffset ICompounder.LastUpdate => _LastUpdate;
+
+        string[] ICompounder.Summary
         {
-            _Settings = Settings.LoadSettings();
+            get
+            {
+                return new[] {
+                    $"Current APR: {_Farm.CurrentAPR.Value.ToString(_Farm.CurrentAPR.Value < 1000 ? "n3" : "n0")} {_Farm.CurrentAPR.Symbol}" +
+                    $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+                    $" ({_Farm.CurrentDeposit.ChainValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})"
+                    ,
+                    $"Optimal APY: {_Farm.OptimalAPY.Value.ToString(_Farm.OptimalAPY.Value < 1000 ? "n3" : "n0")} {_Farm.OptimalAPY.Symbol}" +
+                    $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+                    $" ({_Farm.CurrentDeposit.ChainValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})" +
+                    $" ({_Farm.OptimalCompoundsPerYear} compounds per year)"
+                    ,
+                    $"Pending reward value: {_Farm.CurrentPendingReward.Value.Value:n9} {_Farm.CurrentPendingReward.Value.Symbol}" +
+                    $" ({_Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentPendingReward.FiatValue.Symbol} /" +
+                    $" {_Farm.CurrentPendingReward.ChainValue.Value:n9} {_Farm.CurrentPendingReward.ChainValue.Symbol})"
+                    ,
+                    $"Deposit value: {_Farm.CurrentDeposit.Value.Value:n9} {_Farm.CurrentDeposit.Value.Symbol}" +
+                    $" ({_Farm.CurrentDeposit.FiatValue.Value:n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+                    $" {_Farm.CurrentDeposit.ChainValue.Value:n9} {_Farm.CurrentDeposit.ChainValue.Symbol})"
+                    ,
+                    $"Underlying Token A deposit value: {_Farm.UnderlyingTokenA_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenA_Deposit.Value.Symbol}" +
+                    $" ({_Farm.UnderlyingTokenA_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenA_Deposit.FiatValue.Symbol} /" +
+                    $" {_Farm.UnderlyingTokenA_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenA_Deposit.ChainValue.Symbol})"
+                    ,
+                    $"Underlying Token B deposit value: {_Farm.UnderlyingTokenB_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenB_Deposit.Value.Symbol}" +
+                    $" ({_Farm.UnderlyingTokenB_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenB_Deposit.FiatValue.Symbol} /" +
+                    $" {_Farm.UnderlyingTokenB_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenB_Deposit.ChainValue.Symbol})"
+                    ,
+                    $"Token A value: {_Farm.TokenA.FiatValue.Value:n2} {_Farm.TokenA.FiatValue.Symbol} /" +
+                    $" {_Farm.TokenA.ChainValue.Value:n9} {_Farm.TokenA.ChainValue.Symbol}"
+                    ,
+                    $"Token B value: {_Farm.TokenB.FiatValue.Value:n2} {_Farm.TokenB.FiatValue.Symbol} /" +
+                    $" {_Farm.TokenB.ChainValue.Value:n9} {_Farm.TokenB.ChainValue.Symbol}"
+                };
+            }
+        }
+
+        ValueSymbol ICompounder.CurrentAPR => _Farm.CurrentAPR;
+
+        ValueSymbol ICompounder.OptimalAPY => _Farm.OptimalAPY;
+
+        int ICompounder.OptimalCompoundsPerYear => _Farm.OptimalCompoundsPerYear;
+
+        ValueSymbol ICompounder.EstimateGasPerTxn => _EstimateGasPerTxn;
+
+        TokenValue ICompounder.CurrentDeposit => _Farm.CurrentDeposit;
+
+        TokenValue ICompounder.UnderlyingTokenA_Deposit => _Farm.UnderlyingTokenA_Deposit;
+
+        TokenValue ICompounder.UnderlyingTokenB_Deposit => _Farm.UnderlyingTokenB_Deposit;
+
+        TokenValue ICompounder.CurrentPendingReward => _Farm.CurrentPendingReward;
+
+        TokenValue ICompounder.TokenA => _Farm.TokenA;
+
+        TokenValue ICompounder.TokenB => _Farm.TokenB;
+
+        TokenValue ICompounder.Reward => _Farm.Reward;
+
+        public Compounder(Settings settings)
+        {
+            _Settings = settings;
 
             if (!string.IsNullOrWhiteSpace(_Settings.LiquidityPool.ZapContract))
                 DefaultTxnCountPerProcess = 12;
@@ -77,6 +144,8 @@ namespace Crypto_LP_Compounder
             string taxFreeContract =
                 string.IsNullOrWhiteSpace(_Settings.LiquidityPool.TaxFreeContract) ? "disabled" : _Settings.LiquidityPool.TaxFreeContract;
 
+            Program.WriteLineLog("Name:              " + _Settings.Name);
+            Program.WriteLineLog("WebApiURL:         " + _Settings.WebApiURL);
             Program.WriteLineLog("RPC URL:           " + _Settings.RPC_URL);
             Program.WriteLineLog("RPC_Timeout:       " + _Settings.RPC_Timeout.ToString() + " s");
             Program.WriteLineLog("GasPriceOffsetGwei:" + _Settings.GasPriceOffsetGwei.ToString() + " Gwei");
@@ -115,6 +184,8 @@ namespace Crypto_LP_Compounder
 
             Nethereum.JsonRpc.Client.ClientBase.ConnectionTimeout = TimeSpan.FromSeconds(_Settings.RPC_Timeout);
 
+            _EstimateGasPerTxn = new() { Symbol = _Settings.GasSymbol };
+
             _RewardToken = new(_Settings, _Web3, _Settings.Farm.RewardContract);
 
             _Factory = new(_Settings, _Web3);
@@ -137,14 +208,15 @@ namespace Crypto_LP_Compounder
         public async Task Start()
         {
             int intervalSecond;
-            DateTimeOffset beginLoopTime, nextLoopTime;
             TimeSpan intervalRemaining;
+            DateTimeOffset beginLoopTime, nextLoopTime;
+            DateTimeOffset lastUpdate = DateTimeOffset.Now;
             Stopwatch stopwatch = new();
 
             DateTimeOffset stateDateTime = DateTimeOffset.UnixEpoch;
             TimeSpan processTimeTaken = TimeSpan.MinValue;
 
-            string statePath = System.IO.Path.Combine(AppContext.BaseDirectory, "state");
+            string statePath = System.IO.Path.Combine(AppContext.BaseDirectory, "state_" + _Settings.Name);
             byte[] stateBytes = System.IO.File.Exists(statePath) ? System.IO.File.ReadAllBytes(statePath) : null;
 
             if (stateBytes?.Length.Equals(sizeof(long) * 2) ?? false)
@@ -165,27 +237,27 @@ namespace Crypto_LP_Compounder
                 }
                 else
                 {
-                    Program.SetIsProcessingLog(true);
+                   Program.SetIsProcessingLog(true);
 
-                    stopwatch.Restart();
+                   stopwatch.Restart();
 
-                    await ProcessCompound();
+                   await ProcessCompound();
 
-                    processTimeTaken = stopwatch.Elapsed;
+                   processTimeTaken = stopwatch.Elapsed;
 
-                    Program.WriteLineLog("Time taken: {0:n0} hr {1:mm' min 'ss' sec'}", processTimeTaken.TotalHours, processTimeTaken);
-                    Program.CreateLineBreak();
+                   Program.WriteLineLog("Time taken: {0:n0} hr {1:mm' min 'ss' sec'}", processTimeTaken.TotalHours, processTimeTaken);
+                   Program.CreateLineBreak();
 
-                    beginLoopTime = DateTimeOffset.Now;
+                   beginLoopTime = DateTimeOffset.Now;
 
-                    stateBytes =
-                        BitConverter.GetBytes(beginLoopTime.ToUnixTimeSeconds()).
-                        Concat(BitConverter.GetBytes(processTimeTaken.Ticks)).
-                        ToArray();
+                   stateBytes =
+                       BitConverter.GetBytes(beginLoopTime.ToUnixTimeSeconds()).
+                       Concat(BitConverter.GetBytes(processTimeTaken.Ticks)).
+                       ToArray();
 
-                    _ = System.IO.File.WriteAllBytesAsync(statePath, stateBytes);
+                   _ = System.IO.File.WriteAllBytesAsync(statePath, stateBytes);
 
-                    Program.SetIsProcessingLog(false);
+                   Program.SetIsProcessingLog(false);
                 }
 
                 nextLoopTime = beginLoopTime;
@@ -200,9 +272,11 @@ namespace Crypto_LP_Compounder
                     {
                         if (nextLoopTime != beginLoopTime)
                         {
+                            lastUpdate = DateTimeOffset.Now;
+
                             Program.WriteLineLog();
                             Program.CreateLineBreak();
-                            Program.WriteLineLog(DateTimeOffset.Now.ToString("yyyy-MM-dd T HH:mm:ss K"));
+                            Program.WriteLineLog(lastUpdate.ToString("yyyy-MM-dd T HH:mm:ss K"));
                         }
 
                         while (!EstimateGasCost(ref _LastEstimateGasCostPerTxn))
@@ -218,6 +292,11 @@ namespace Crypto_LP_Compounder
 
                             if (Program.IsTerminate) return;
                         }
+
+                        _LastUpdate = lastUpdate;
+
+                        _EstimateGasPerTxn.Value =
+                            (decimal)UnitConversion.Convert.FromWeiToBigDecimal(_LastEstimateGasCostPerTxn, UnitConversion.EthUnit.Ether);
 
                         intervalSecond -= (int)Math.Floor(processTimeTaken.TotalSeconds);
 

@@ -77,6 +77,18 @@ namespace Crypto_LP_Compounder
             Program.WriteLineLog();
             try
             {
+                while (string.IsNullOrWhiteSpace(settings.Name))
+                {
+                    Program.WriteLineLog("Instance name cannot be empty!");
+                    Program.WriteLog("New instance name > ");
+                    Program.EnableQuickEdit();
+
+                    settings.Name = Console.ReadLine();
+
+                    Program.DisableQuickEdit();
+                    isSettingChanged = true;
+                }
+
                 CheckAddress(settings, "WETH_Contract", ref isSettingChanged);
                 CheckAddress(settings, "USD_Contract", ref isSettingChanged);
                 CheckAddress(settings, "LiquidityPool.TokenA_Contract", ref isSettingChanged);
@@ -279,6 +291,8 @@ namespace Crypto_LP_Compounder
 
         #region Properties and Subtypes
 
+        public string Name { get; set; } = "Instance_1";
+        public string WebApiURL { get; set; } = string.Empty;
         public string RPC_URL { get; set; } = string.Empty;
         public uint RPC_Timeout { get; set; } = 120;
         public float GasPriceOffsetGwei { get; set; } = 0.0f;

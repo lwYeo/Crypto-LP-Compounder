@@ -1,4 +1,6 @@
 {
+  "Name": "Instance_1",
+  "WebApiURL": "http://127.0.0.1:5050",
   "RPC_URL": "https://rpc.fantom.network/",
   "RPC_Timeout": 120,
   "GasPriceOffsetGwei": 0.0,

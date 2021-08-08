@@ -32,6 +32,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DTO\DTO.csproj" />
+    <ProjectReference Include="..\WebApi\WebApi.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="Crypto Crypt">
       <HintPath>Crypto Crypt.dll</HintPath>
     </Reference>

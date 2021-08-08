@@ -14,6 +14,7 @@
    limitations under the License.
 */
 
+using DTO;
 using Nethereum.Contracts;
 using Nethereum.Contracts.ContractHandlers;
 using Nethereum.RPC.Eth.DTOs;
@@ -48,6 +49,60 @@ namespace Crypto_LP_Compounder.Contract.Farm
             _TokenB = new(_Settings, _Web3, _Settings.LiquidityPool.TokenB_Contract);
             _LiquidityToken = new(_Settings, _Web3, _Settings.LiquidityPool.LP_Contract);
             _ContractHandler = _Web3.Eth.GetContractHandler(_Settings.Farm.FarmContract);
+
+            CurrentAPR = new() { Symbol = "%" };
+            OptimalAPY = new() { Symbol = "%" };
+
+            CurrentDeposit = new();
+            SetTokenSymbol(CurrentDeposit, "LP");
+
+            UnderlyingTokenA_Deposit = new();
+            SetTokenSymbol(UnderlyingTokenA_Deposit, _Settings.Farm.FarmType.Split(':')[0].Split('-')[0]);
+
+            UnderlyingTokenB_Deposit = new();
+            SetTokenSymbol(UnderlyingTokenB_Deposit, _Settings.Farm.FarmType.Split(':')[0].Split('-')[1]);
+
+            CurrentPendingReward = new();
+            SetTokenSymbol(CurrentPendingReward, _Settings.Farm.FarmType.Split(':')[1]);
+
+            TokenA = new();
+            TokenA.Value.Value = 1;
+            SetTokenSymbol(TokenA, _Settings.Farm.FarmType.Split(':')[0].Split('-')[0]);
+
+            TokenB = new();
+            TokenB.Value.Value = 1;
+            SetTokenSymbol(TokenB, _Settings.Farm.FarmType.Split(':')[0].Split('-')[1]);
+
+            Reward = new();
+            Reward.Value.Value = 1;
+            SetTokenSymbol(Reward, _Settings.Farm.FarmType.Split(':')[1]);
+        }
+
+        public ValueSymbol CurrentAPR { get; private set; }
+
+        public ValueSymbol OptimalAPY { get; private set; }
+
+        public int OptimalCompoundsPerYear { get; private set; }
+
+        public TokenValue CurrentDeposit { get; private set; }
+
+        public TokenValue UnderlyingTokenA_Deposit { get; private set; }
+
+        public TokenValue UnderlyingTokenB_Deposit { get; private set; }
+
+        public TokenValue CurrentPendingReward { get; private set; }
+
+        public TokenValue TokenA { get; private set; }
+
+        public TokenValue TokenB { get; private set; }
+
+        public TokenValue Reward { get; private set; }
+
+        private void SetTokenSymbol(TokenValue token, string valueSymbol)
+        {
+            token.FiatValue.Symbol = "USD";
+            token.ChainValue.Symbol = _Settings.GasSymbol;
+            token.Value.Symbol = valueSymbol;
         }
 
         public abstract Task<BigInteger> GetRewardPerSecondTask();
@@ -328,19 +383,28 @@ namespace Crypto_LP_Compounder.Contract.Farm
                             _Settings.WETH_Contract).
                         ContinueWith(t => UnitConversion.Convert.FromWeiToBigDecimal(t.Result, UnitConversion.EthUnit.Ether));
 
+                Reward.ChainValue.Value = (decimal)rewardValueEth.Result;
+                Reward.FiatValue.Value = (decimal)(rewardValueEth.Result * ethToUsdTask.Result);
+
                 Program.WriteLineLog("Reward value: {0:n2} USD / {1:n10} {2}",
-                    (decimal)(rewardValueEth.Result * ethToUsdTask.Result),
-                    (decimal)rewardValueEth.Result,
+                    Reward.FiatValue.Value,
+                    Reward.ChainValue.Value,
                     _Settings.GasSymbol);
+
+                TokenA.ChainValue.Value = (decimal)tokenValueAEthTask.Result;
+                TokenA.FiatValue.Value = (decimal)(tokenValueAEthTask.Result * ethToUsdTask.Result);
 
                 Program.WriteLineLog("Token A value: {0:n2} USD / {1:n10} {2}",
-                    (decimal)(tokenValueAEthTask.Result * ethToUsdTask.Result),
-                    (decimal)tokenValueAEthTask.Result,
+                    TokenA.FiatValue.Value,
+                    TokenA.ChainValue.Value,
                     _Settings.GasSymbol);
 
+                TokenB.ChainValue.Value = (decimal)tokenValueBEthTask.Result;
+                TokenB.FiatValue.Value = (decimal)(tokenValueBEthTask.Result * ethToUsdTask.Result);
+
                 Program.WriteLineLog("Token B value: {0:n2} USD / {1:n10} {2}",
-                    (decimal)(tokenValueBEthTask.Result * ethToUsdTask.Result),
-                    (decimal)tokenValueBEthTask.Result,
+                    TokenB.FiatValue.Value,
+                    TokenB.ChainValue.Value,
                     _Settings.GasSymbol);
 
                 Program.WriteLog("Getting pending rewards... ");
@@ -350,10 +414,14 @@ namespace Crypto_LP_Compounder.Contract.Farm
                     ContinueWith(t => UnitConversion.Convert.FromWeiToBigDecimal(t.Result, UnitConversion.EthUnit.Wei) /
                         BigDecimal.Pow(10, _Settings.Farm.RewardDecimals));
 
+                CurrentPendingReward.Value.Value = (decimal)pendingReward.Result;
+                CurrentPendingReward.ChainValue.Value = (decimal)(pendingReward.Result * rewardValueEth.Result);
+                CurrentPendingReward.FiatValue.Value = (decimal)(pendingReward.Result * rewardValueEth.Result * ethToUsdTask.Result);
+
                 Program.WriteLineLog("{0:n10} ({1:n2} USD / {2:n10} {3})",
-                    (decimal)pendingReward.Result,
-                    (decimal)(pendingReward.Result * rewardValueEth.Result * ethToUsdTask.Result),
-                    (decimal)(pendingReward.Result * rewardValueEth.Result),
+                    CurrentPendingReward.Value.Value,
+                    CurrentPendingReward.FiatValue.Value,
+                    CurrentPendingReward.ChainValue.Value,
                     _Settings.GasSymbol);
             }
             catch (Exception ex)
@@ -405,10 +473,14 @@ namespace Crypto_LP_Compounder.Contract.Farm
                         return (tokenAOffsetEth + tokenBOffsetEth) / totalLpSupplyTask.Result;
                     });
 
+                CurrentDeposit.Value.Value = (decimal)(userDepositSizeTask.Result / BigDecimal.Pow(10, _Settings.LiquidityPool.LP_Decimals));
+                CurrentDeposit.ChainValue.Value = (decimal)userDepositAmtEthTask.Result;
+                CurrentDeposit.FiatValue.Value = (decimal)(userDepositAmtEthTask.Result * ethToUsdTask.Result);
+
                 Program.WriteLineLog("{0:n10} ({1:n2} USD / {2:n10} {3})",
-                    (decimal)(userDepositSizeTask.Result / BigDecimal.Pow(10, _Settings.LiquidityPool.LP_Decimals)),
-                    (decimal)(userDepositAmtEthTask.Result * ethToUsdTask.Result),
-                    (decimal)userDepositAmtEthTask.Result,
+                    CurrentDeposit.Value.Value,
+                    CurrentDeposit.FiatValue.Value,
+                    CurrentDeposit.ChainValue.Value,
                     _Settings.GasSymbol);
 
                 BigDecimal underlyingTokenAEth =
@@ -417,16 +489,24 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 BigDecimal underlyingTokenBEth =
                     (userDepositAmtEthTask.Result * tokenBInLPEthTask.Result / (tokenAInLPEthTask.Result + tokenBInLPEthTask.Result));
 
+                UnderlyingTokenA_Deposit.Value.Value = (decimal)(underlyingTokenAEth / tokenValueAEthTask.Result);
+                UnderlyingTokenA_Deposit.ChainValue.Value = (decimal)underlyingTokenAEth;
+                UnderlyingTokenA_Deposit.FiatValue.Value = (decimal)(underlyingTokenAEth * ethToUsdTask.Result);
+
                 Program.WriteLineLog("Underlying Token A value: {0:n10} ({1:n2} USD / {2:n10} {3})",
-                    (decimal)(underlyingTokenAEth / tokenValueAEthTask.Result),
-                    (decimal)(underlyingTokenAEth * ethToUsdTask.Result),
-                    (decimal)underlyingTokenAEth,
+                    UnderlyingTokenA_Deposit.Value.Value,
+                    UnderlyingTokenA_Deposit.FiatValue.Value,
+                    UnderlyingTokenA_Deposit.ChainValue.Value,
                     _Settings.GasSymbol);
 
+                UnderlyingTokenB_Deposit.Value.Value = (decimal)(underlyingTokenBEth / tokenValueBEthTask.Result);
+                UnderlyingTokenB_Deposit.ChainValue.Value = (decimal)underlyingTokenBEth;
+                UnderlyingTokenB_Deposit.FiatValue.Value = (decimal)(underlyingTokenBEth * ethToUsdTask.Result);
+
                 Program.WriteLineLog("Underlying Token B value: {0:n10} ({1:n2} USD / {2:n10} {3})",
-                    (decimal)(underlyingTokenBEth / tokenValueBEthTask.Result),
-                    (decimal)(underlyingTokenBEth * ethToUsdTask.Result),
-                    (decimal)underlyingTokenBEth,
+                    UnderlyingTokenB_Deposit.Value.Value,
+                    UnderlyingTokenB_Deposit.FiatValue.Value,
+                    UnderlyingTokenB_Deposit.ChainValue.Value,
                     _Settings.GasSymbol);
             }
             catch (Exception ex)
@@ -469,6 +549,7 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 BigDecimal offset = valuePerLpOffsetEthTask.Result / valuePerLpEthTask.Result;
 
                 apr = farmWeightRewardPerYearTask.Result / lpHoldingInFarmTask.Result * 100 * rewardValueEth.Result * offset;
+                CurrentAPR.Value = (decimal)apr;
 
                 if (apr > 0)
                 {
@@ -518,6 +599,9 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
                 if (compoundPerYear > 0)
                 {
+                    OptimalAPY.Value = optimalApy;
+                    OptimalCompoundsPerYear = compoundPerYear;
+
                     compoundIntervalSecond = 60 * 60 * 24 * 365 / compoundPerYear;
 
                     BigDecimal optimalEthPerYr = userDepositAmtEthTask.Result * optimalApy / 100;
@@ -538,6 +622,9 @@ namespace Crypto_LP_Compounder.Contract.Farm
                 }
                 else
                 {
+                    OptimalAPY.Value = 0;
+                    OptimalCompoundsPerYear = 0;
+
                     Program.WriteLineLog("Failed: Calculate optimal APY");
 
                     return false;
