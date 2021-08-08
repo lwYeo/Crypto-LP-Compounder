@@ -55,7 +55,14 @@ namespace Crypto_LP_Compounder
 
         string ICompounder.Name => _Settings.Name;
 
-        DateTimeOffset ICompounder.LastUpdate => _LastUpdate;
+        DateTimeOffset ICompounder.LastUpdate =>
+            new(_LastUpdate.Year,
+                _LastUpdate.Month,
+                _LastUpdate.Day,
+                _LastUpdate.Hour,
+                _LastUpdate.Minute,
+                _LastUpdate.Second,
+                _LastUpdate.Offset);
 
         string[] ICompounder.Summary
         {
@@ -237,27 +244,27 @@ namespace Crypto_LP_Compounder
                 }
                 else
                 {
-                   Program.SetIsProcessingLog(true);
+                    Program.SetIsProcessingLog(true);
 
-                   stopwatch.Restart();
+                    stopwatch.Restart();
 
-                   await ProcessCompound();
+                    await ProcessCompound();
 
-                   processTimeTaken = stopwatch.Elapsed;
+                    processTimeTaken = stopwatch.Elapsed;
 
-                   Program.WriteLineLog("Time taken: {0:n0} hr {1:mm' min 'ss' sec'}", processTimeTaken.TotalHours, processTimeTaken);
-                   Program.CreateLineBreak();
+                    Program.WriteLineLog("Time taken: {0:n0} hr {1:mm' min 'ss' sec'}", processTimeTaken.TotalHours, processTimeTaken);
+                    Program.CreateLineBreak();
 
-                   beginLoopTime = DateTimeOffset.Now;
+                    beginLoopTime = DateTimeOffset.Now;
 
-                   stateBytes =
-                       BitConverter.GetBytes(beginLoopTime.ToUnixTimeSeconds()).
-                       Concat(BitConverter.GetBytes(processTimeTaken.Ticks)).
-                       ToArray();
+                    stateBytes =
+                        BitConverter.GetBytes(beginLoopTime.ToUnixTimeSeconds()).
+                        Concat(BitConverter.GetBytes(processTimeTaken.Ticks)).
+                        ToArray();
 
-                   _ = System.IO.File.WriteAllBytesAsync(statePath, stateBytes);
+                    _ = System.IO.File.WriteAllBytesAsync(statePath, stateBytes);
 
-                   Program.SetIsProcessingLog(false);
+                    Program.SetIsProcessingLog(false);
                 }
 
                 nextLoopTime = beginLoopTime;
