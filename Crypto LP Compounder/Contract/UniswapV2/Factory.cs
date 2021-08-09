@@ -24,11 +24,11 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
     internal class Factory
     {
         private readonly Log _Log;
-        private readonly Settings _Settings;
+        private readonly Settings.CompounderSettings _Settings;
         private readonly Web3 _Web3;
         private readonly ContractHandler _ContractHandler;
 
-        public Factory(Log log, Settings settings, Web3 web3)
+        public Factory(Log log, Settings.CompounderSettings settings, Web3 web3)
         {
             _Log = log;
             _Settings = settings;

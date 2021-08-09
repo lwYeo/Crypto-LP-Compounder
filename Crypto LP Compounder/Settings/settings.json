@@ -1,0 +1,8 @@
+{
+  "WebApiURL": "http://127.0.0.1:5050",
+  "SettingsFileNames": [
+    "settings_WBNB-MOMA.json",
+    "settings_WFTM-TOMB.json",
+    "settings_WFTM-YEL.json"
+  ]
+}

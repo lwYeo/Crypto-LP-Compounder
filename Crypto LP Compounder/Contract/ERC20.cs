@@ -27,13 +27,13 @@ namespace Crypto_LP_Compounder.Contract
     internal class ERC20
     {
         private readonly Log _Log;
-        private readonly Settings _Settings;
+        private readonly Settings.CompounderSettings _Settings;
         private readonly Web3 _Web3;
         private readonly ContractHandler _ContractHandler;
 
         public string Address { get; }
 
-        public ERC20(Log log, Settings settings, Web3 web3, string tokenAddress)
+        public ERC20(Log log, Settings.CompounderSettings settings, Web3 web3, string tokenAddress)
         {
             _Log = log;
             Address = tokenAddress;

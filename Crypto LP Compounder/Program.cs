@@ -40,16 +40,15 @@ namespace Crypto_LP_Compounder
 
         private static readonly ManualResetEvent _FlushCompleteEvent = new(false);
 
-        private static Compounder _AutoCompounder;
+        private static Compounder[] _Compounders;
 
-        private static readonly Func<ICompounder[]> _GetAllCompounders = () =>
-        {
-            return new ICompounder[] { _AutoCompounder };
-        };
+        private static readonly Func<ICompounder[]> _GetAllCompounders = () => _Compounders?.OfType<ICompounder>().ToArray();
+
+        private static volatile bool _IsPause;
 
         private static volatile bool _IsTerminate;
 
-        private static Settings _Settings;
+        private static Settings.MainSettings _Settings;
 
         internal static bool IsTerminate => _IsTerminate;
 
@@ -61,11 +60,11 @@ namespace Crypto_LP_Compounder
 
         internal static string GetLineBreak() => string.Concat(Enumerable.Repeat("=", 100));
 
-        internal static void LogLineBreakConsole() => LogConsole(GetLineBreak());
+        internal static void LogLineBreakConsole() => LogLineConsole(GetLineBreak());
 
         internal static async Task FlushConsoleLogsAsync()
         {
-            while (!string.IsNullOrWhiteSpace(_ConsoleLogQueue.Peek())) await Task.Delay(100);
+            while (_ConsoleLogQueue.TryPeek(out _)) await Task.Delay(100);
         }
 
         internal static async Task StartConsoleLog()
@@ -81,15 +80,26 @@ namespace Crypto_LP_Compounder
 
         internal static void ExitWithErrorCode(int errorCode)
         {
-            _AutoCompounder.Log.FlushLogsAsync().Wait();
+            ExitWithErrorCodeAsync(errorCode).Wait();
+        }
+
+        private static async Task ExitWithErrorCodeAsync(int errorCode)
+        {
+            _IsTerminate = true;
+            _IsPause = true;
+
+            await FlushConsoleLogsAsync();
 
             LogLineConsole();
             LogConsole("Press any key to continue...");
 
-            FlushConsoleLogsAsync().Wait();
+            await FlushConsoleLogsAsync();
 
             Console.ReadKey();
+
             Environment.Exit(errorCode);
+
+            _IsPause = false;
         }
 
         private static async Task Main(string[] args)
@@ -110,22 +120,55 @@ namespace Crypto_LP_Compounder
 
             SetConsoleCtrlHandler();
 
-            _Settings = Settings.LoadSettings();
+            _Settings = Settings.MainSettings.LoadSettings();
 
-            WebApi.Program.Start(_Settings.WebApiURL, _GetAllCompounders, args);
-
-            _AutoCompounder = new(_Settings);
-
-            await _AutoCompounder.Start();
-
-            await _AutoCompounder.Log.FlushLogsAsync();
+            if (_Settings.Compounders.Select(c => c.Name).Distinct().Count() < _Settings.Compounders.Count)
+            {
+                LogLineConsole();
+                LogLineConsole("Instance name(s) in all settings file must be unique!");
+                await ExitWithErrorCodeAsync(13);
+            }
 
             LogLineConsole();
-            LogLineBreakConsole();
-            LogLineConsole("Autocompounder stopped");
-            LogLineBreakConsole();
+            LogLineConsole("Starting Web API...");
+            _ = WebApi.Program
+                .Start(_Settings.WebApiURL, _GetAllCompounders, args)
+                .ContinueWith(async t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        _IsTerminate = true;
+                        _IsPause = true;
 
-            FlushConsoleLogsAsync().Wait();
+                        LogLineConsole();
+                        LogLineConsole(t.Exception.Message);
+
+                        await ExitWithErrorCodeAsync(20);
+                    }
+                });
+
+            await Task.Delay(1000); // Wait for web API to initialize
+
+            if (!_IsTerminate)
+            {
+                _Compounders = _Settings.Compounders.Select(settings => new Compounder(settings)).ToArray();
+
+                LogLineConsole();
+                LogLineConsole("Starting autocompounders...");
+
+                await Task.WhenAll(_Compounders.Select(c => c.Start()));
+
+                await Task.WhenAll(_Compounders.Select(c => c.Log.FlushLogsAsync()));
+
+                LogLineConsole();
+                LogLineBreakConsole();
+                LogLineConsole("Autocompounder stopped");
+                LogLineBreakConsole();
+            }
+
+            await FlushConsoleLogsAsync();
+
+            while (_IsPause) await Task.Delay(100);
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), originalConsoleMode);

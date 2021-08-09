@@ -37,7 +37,7 @@ namespace Crypto_LP_Compounder
         private const string BurnAddress = "0x0000000000000000000000000000000000000000";
         private const uint MaxRetries = 20;
 
-        private readonly Settings _Settings;
+        private readonly Settings.CompounderSettings _Settings;
         private readonly Web3 _Web3;
 
         private readonly Contract.UniswapV2.Factory _Factory;
@@ -127,7 +127,7 @@ namespace Crypto_LP_Compounder
 
         public Log Log { get; }
 
-        public Compounder(Settings settings)
+        public Compounder(Settings.CompounderSettings settings)
         {
             _Settings = settings;
 
@@ -143,6 +143,7 @@ namespace Crypto_LP_Compounder
             _LastProcessTxnCount = DefaultTxnCountPerProcess;
             _LastEstimateGasCostPerTxn = BigInteger.Zero;
 
+            Log.WriteLine();
             Log.WriteLineBreak();
             Log.WriteLine("Autocompounder settings");
             Log.WriteLineBreak();
@@ -156,7 +157,7 @@ namespace Crypto_LP_Compounder
                 string.IsNullOrWhiteSpace(_Settings.LiquidityPool.TaxFreeContract) ? "disabled" : _Settings.LiquidityPool.TaxFreeContract;
 
             Log.WriteLine("Name:              " + _Settings.Name);
-            Log.WriteLine("WebApiURL:         " + _Settings.WebApiURL);
+            Log.WriteLine("IsLogAll:          " + _Settings.IsLogAll.ToString());
             Log.WriteLine("RPC URL:           " + _Settings.RPC_URL);
             Log.WriteLine("RPC_Timeout:       " + _Settings.RPC_Timeout.ToString() + " s");
             Log.WriteLine("GasPriceOffsetGwei:" + _Settings.GasPriceOffsetGwei.ToString() + " Gwei");
@@ -207,9 +208,9 @@ namespace Crypto_LP_Compounder
 
             _Farm = _Settings.Farm.FarmType switch
             {
-                "WFTM-TOMB:TSHARE" => new Contract.Farm.TombFinance(Log, _Settings, _Web3, _Router, _RewardToken),
-                "WFTM-YEL:YEL" => new Contract.Farm.YEL(Log, _Settings, _Web3, _Router, _RewardToken),
-                "WBNB-MOMA:MOMA" => new Contract.Farm.MOMA(Log, _Settings, _Web3, _Router, _RewardToken),
+                "WFTM-TOMB_TSHARE" => new Contract.Farm.TombFinance(Log, _Settings, _Web3, _Router, _RewardToken),
+                "WFTM-YEL_YEL" => new Contract.Farm.YEL(Log, _Settings, _Web3, _Router, _RewardToken),
+                "WBNB-MOMA_MOMA" => new Contract.Farm.MOMA(Log, _Settings, _Web3, _Router, _RewardToken),
                 _ => null
             };
 

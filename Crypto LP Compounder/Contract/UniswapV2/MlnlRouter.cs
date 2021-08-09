@@ -31,7 +31,7 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
     {
         private readonly ContractHandler _MlnlContractHandler;
 
-        public MlnlRouter(Log log, Settings settings, Web3 web3) : base(log, settings, web3)
+        public MlnlRouter(Log log, Settings.CompounderSettings settings, Web3 web3) : base(log, settings, web3)
         {
             if (!string.IsNullOrWhiteSpace(_LpSettings.ZapContract))
                 _MlnlContractHandler = _Web3.Eth.GetContractHandler(_LpSettings.ZapContract);

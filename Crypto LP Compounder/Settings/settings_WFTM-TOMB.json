@@ -1,7 +1,6 @@
 {
-  "Name": "Instance_1",
+  "Name": "WFTM-TOMB_TSHARE",
   "IsLogAll": true,
-  "WebApiURL": "http://127.0.0.1:5050",
   "RPC_URL": "https://rpc.fantom.network/",
   "RPC_Timeout": 120,
   "GasPriceOffsetGwei": 0.0,
@@ -18,24 +17,24 @@
   "LiquidityPool": {
     "TokenA_Contract": "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83", //WFTM
     "TokenA_Decimals": 18,
-    "TokenB_Contract": "0xD3b71117E6C1558c1553305b44988cd944e97300", //YEL
+    "TokenB_Contract": "0x6c021Ae822BEa943b2E66552bDe1D2696a53fbB7", //TOMB
     "TokenB_Decimals": 18,
-    "LP_Contract": "0x8BFf7b8B6a14e576a3634d6c0466A19A6E9b170a", //WFTM-YEL LP
+    "LP_Contract": "0x2A651563C9d3Af67aE0388a5c8F89b867038089e", //WFTM-TOMB LP
     "LP_Decimals": 18,
     "FactoryContract": "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3", //Spooky Factory
     "RouterContract": "0xF491e7B69E4244ad4002BC14e878a34207E38c29", //Spooky Router
     "Slippage": 2.0,
     "TokenA_Offset": 0.0,
     "TokenB_Offset": 0.0,
-    "ZapContract": "",
-    "TaxFreeContract": ""
+    "ZapContract": "", //"0x8bb1fe7a50082623b372d857b4d07911c786a3e9"
+    "TaxFreeContract": "0xcaf6C0FB8Bcb737C2D5D7e5Db615147a26091De1" //Tax free contract, for TOMB
   },
   "Farm": {
-    "FarmType": "WFTM-YEL:YEL",
-    "FarmContract": "0x954b15065e4FA1243Cd45a020766511b68Ea9b6E", //YEL pool
-    "RewardContract": "0xD3b71117E6C1558c1553305b44988cd944e97300", //YEL
+    "FarmType": "WFTM-TOMB_TSHARE",
+    "FarmContract": "0xcc0a87F7e7c693042a9Cc703661F5060c80ACb43", //TSHARE reward pool
+    "RewardContract": "0x4cdF39285D7Ca8eB3f090fDA0C069ba5F4145B37", //TSHARE
     "RewardDecimals": 18,
-    "FarmPoolID": 1,
-    "ProcessAllRewards": false
+    "FarmPoolID": 0,
+    "ProcessAllRewards": true //True to process all leaked rewards, as tax free contract could not process 100% rewards without 'transfer amount exceeds balance' error
   }
 }

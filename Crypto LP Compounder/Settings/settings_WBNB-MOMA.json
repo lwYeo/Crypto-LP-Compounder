@@ -1,7 +1,6 @@
 {
-  "Name": "Instance_1",
+  "Name": "WBNB-MOMA_MOMA",
   "IsLogAll": true,
-  "WebApiURL": "http://127.0.0.1:5050",
   "RPC_URL": "https://bsc-dataseed1.binance.org/",
   "RPC_Timeout": 120,
   "GasPriceOffsetGwei": 0.0,
@@ -31,7 +30,7 @@
     "TaxFreeContract": ""
   },
   "Farm": {
-    "FarmType": "WBNB-MOMA:MOMA",
+    "FarmType": "WBNB-MOMA_MOMA",
     "FarmContract": "0x4eaDA50Ce6f570393967314d8550a0Ec5BC54c80", //WBNB-MOMA Farm (non-vesting)
     "RewardContract": "0xB72842D6F5feDf91D22d56202802Bb9A79C6322E", //MOMA
     "RewardDecimals": 18,

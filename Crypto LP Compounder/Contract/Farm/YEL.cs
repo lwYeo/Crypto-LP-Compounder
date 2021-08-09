@@ -23,7 +23,7 @@ namespace Crypto_LP_Compounder.Contract.Farm
 {
     internal class YEL : MasterChef
     {
-        public YEL(Log log, Settings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken) :
+        public YEL(Log log, Settings.CompounderSettings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken) :
             base(log, settings, web3, router, rewardToken)
         {
         }

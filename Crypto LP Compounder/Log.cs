@@ -37,7 +37,7 @@ namespace Crypto_LP_Compounder
 
         public bool IsCompoundProcess { get; set; }
 
-        public Log(Settings settings)
+        public Log(Settings.CompounderSettings settings)
         {
             _IsLogAll = settings.IsLogAll;
             _InstanceName = settings.Name;
@@ -47,7 +47,7 @@ namespace Crypto_LP_Compounder
 
         public async Task FlushLogsAsync()
         {
-            while (!string.IsNullOrWhiteSpace(_LogQueue.Peek())) await Task.Delay(100);
+            while (_LogQueue.TryPeek(out _)) await Task.Delay(100);
         }
 
         public void Write(string log)

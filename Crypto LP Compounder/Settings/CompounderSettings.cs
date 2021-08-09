@@ -21,42 +21,40 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 
-namespace Crypto_LP_Compounder
+namespace Crypto_LP_Compounder.Settings
 {
-    internal class Settings
+    internal class CompounderSettings
     {
-        private const string FileName = "settings.json";
-
         private static readonly AddressUtil _AddressUtil = new();
 
         private static CancellationTokenSource _CancelToken;
 
-        public static Settings LoadSettings()
+        public static CompounderSettings LoadSettings(string filePath)
         {
-            Settings settings;
+            Program.LogLineConsole();
+            Program.LogConsole($"Loading settings from '{filePath}'... ");
 
-            Program.LogConsole("Loading settings... ");
-
-            string filePath = System.IO.Path.Combine(AppContext.BaseDirectory, FileName);
+            CompounderSettings settings = null;
 
             if (System.IO.File.Exists(filePath))
             {
-                settings = Json.DeserializeFromFile<Settings>(filePath);
+                settings = Json.DeserializeFromFile<CompounderSettings>(filePath);
                 Program.LogLineConsole("Done!");
             }
             else
             {
                 Program.LogLineConsole("File not found!");
-                settings = new();
+                Program.ExitWithErrorCode(11);
             }
 
             CheckSettings(settings, out bool isSettingChanged);
 
             if (isSettingChanged)
             {
+                Program.LogLineConsole();
                 Program.LogLineBreakConsole();
 
-                if (Json.SerializeToFile(settings, FileName))
+                if (Json.SerializeToFile(settings, filePath))
                     Program.LogLineConsole("Settings saved");
                 else
                 {
@@ -73,16 +71,52 @@ namespace Crypto_LP_Compounder
             return settings;
         }
 
-        private static void CheckSettings(Settings settings, out bool isSettingChanged)
+        private static void CheckSettings(CompounderSettings settings, out bool isSettingChanged)
         {
             isSettingChanged = false;
             Program.LogLineConsole();
             Program.LogLineConsole("Checking settings...");
-            Program.LogLineConsole();
             try
             {
+                bool isInstanceNameCheck = false;
+
+                while (!isInstanceNameCheck)
+                {
+                    if (string.IsNullOrWhiteSpace(settings.Name))
+                    {
+                        Program.LogLineConsole();
+                        Program.LogLineConsole("Instance name cannot be empty!");
+                        Program.LogConsole("New instance name > ");
+                        Program.FlushConsoleLogsAsync().Wait();
+                        Program.EnableQuickEdit();
+
+                        settings.Name = Console.ReadLine();
+
+                        Program.DisableQuickEdit();
+                        isSettingChanged = true;
+                    }
+                    else if (System.IO.Path.GetInvalidFileNameChars().Any(invalidChar => settings.Name.Contains(invalidChar)))
+                    {
+                        Program.LogLineConsole();
+                        Program.LogLineConsole("Instance name contains invalid character(s)!");
+                        Program.LogConsole("New instance name > ");
+                        Program.FlushConsoleLogsAsync().Wait();
+                        Program.EnableQuickEdit();
+
+                        settings.Name = Console.ReadLine();
+
+                        Program.DisableQuickEdit();
+                        isSettingChanged = true;
+                    }
+                    else
+                    {
+                        isInstanceNameCheck = true;
+                    }
+                }
+
                 while (string.IsNullOrWhiteSpace(settings.Name))
                 {
+                    Program.LogLineConsole();
                     Program.LogLineConsole("Instance name cannot be empty!");
                     Program.LogConsole("New instance name > ");
                     Program.FlushConsoleLogsAsync().Wait();
@@ -108,6 +142,7 @@ namespace Crypto_LP_Compounder
 
                 while (settings.FixedGasPriceGwei < 0.0f)
                 {
+                    Program.LogLineConsole();
                     Program.LogLineConsole("Invalid fixed gas price! Must be >= 0.0 (0 for disable)");
                     Program.LogConsole("New fixed gas price (Gwei) > ");
                     Program.FlushConsoleLogsAsync().Wait();
@@ -122,6 +157,7 @@ namespace Crypto_LP_Compounder
 
                 while (settings.MinGasPriceGwei < 0.0f)
                 {
+                    Program.LogLineConsole();
                     Program.LogLineConsole("Invalid minimum gas price! Must be >= 0.0");
                     Program.LogConsole("New minimum gas price (Gwei) > ");
                     Program.FlushConsoleLogsAsync().Wait();
@@ -136,6 +172,7 @@ namespace Crypto_LP_Compounder
 
                 while (string.IsNullOrWhiteSpace(settings.GasSymbol))
                 {
+                    Program.LogLineConsole();
                     Program.LogLineConsole("Gas symbol is empty!");
                     Program.LogConsole("New gas symbol (e.g. ETH) > ");
                     Program.FlushConsoleLogsAsync().Wait();
@@ -149,6 +186,7 @@ namespace Crypto_LP_Compounder
 
                 while (settings.LiquidityPool.Slippage < 0.1f)
                 {
+                    Program.LogLineConsole();
                     Program.LogLineConsole("Invalid slippage! Must be >= 0.1");
                     Program.LogConsole("New slippage (%) > ");
                     Program.FlushConsoleLogsAsync().Wait();
@@ -176,6 +214,7 @@ namespace Crypto_LP_Compounder
 
                 if (!string.IsNullOrWhiteSpace(keyIssue))
                 {
+                    Program.LogLineConsole();
                     Program.LogLineConsole("Private key field is " + keyIssue);
                     Program.LogConsole("New private key > ");
                     Program.FlushConsoleLogsAsync().Wait();
@@ -187,18 +226,19 @@ namespace Crypto_LP_Compounder
                     isSettingChanged = true;
                 }
 
+                if (isSettingChanged) Program.LogLineConsole();
                 Program.LogLineConsole("Settings checked");
-                Program.LogLineConsole();
             }
             catch (Exception ex)
             {
+                Program.LogLineConsole();
                 Program.LogLineConsole("Checking settings failed");
                 Program.LogLineConsole(ex.ToString());
                 Program.ExitWithErrorCode(2);
             }
         }
 
-        private static void CheckAddress(Settings settings, string parameter, ref bool isSettingChange, bool isOptional = false)
+        private static void CheckAddress(CompounderSettings settings, string parameter, ref bool isSettingChange, bool isOptional = false)
         {
             string name = string.Empty;
             string address = string.Empty;
@@ -251,8 +291,8 @@ namespace Crypto_LP_Compounder
 
                 parentObject.GetType().GetProperty(name).SetValue(parentObject, address);
 
-                Program.LogLineConsole($"{parameter}: Address updated due to checksum ({address})");
                 Program.LogLineConsole();
+                Program.LogLineConsole($"{parameter}: Address updated due to checksum ({address})");
 
                 isSettingChange = true;
             }
@@ -305,8 +345,6 @@ namespace Crypto_LP_Compounder
         public string Name { get; set; } = "Instance_1";
 
         public bool IsLogAll { get; set; } = true;
-
-        public string WebApiURL { get; set; } = string.Empty;
 
         public string RPC_URL { get; set; } = string.Empty;
 

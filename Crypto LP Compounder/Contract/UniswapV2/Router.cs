@@ -30,8 +30,8 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
     internal class Router
     {
         protected readonly Log _Log;
-        protected readonly Settings _Settings;
-        protected readonly Settings.LiquidityPoolParams _LpSettings;
+        protected readonly Settings.CompounderSettings _Settings;
+        protected readonly Settings.CompounderSettings.LiquidityPoolParams _LpSettings;
 
         protected readonly Web3 _Web3;
         protected readonly ContractHandler _ContractHandler;
@@ -40,7 +40,7 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
         private readonly ERC20 _TokenA;
         private readonly ERC20 _TokenB;
 
-        public Router(Log log, Settings settings, Web3 web3)
+        public Router(Log log, Settings.CompounderSettings settings, Web3 web3)
         {
             _Log = log;
             _Settings = settings;

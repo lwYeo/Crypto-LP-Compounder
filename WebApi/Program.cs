@@ -27,7 +27,7 @@ namespace WebApi
     {
         internal static Func<ICompounder[]> GetInstances { get; private set; }
 
-        public static async void Start(string webApiUrl, Func<ICompounder[]> getInstances, string[] args)
+        public static async Task Start(string webApiUrl, Func<ICompounder[]> getInstances, string[] args)
         {
             GetInstances = getInstances;
 

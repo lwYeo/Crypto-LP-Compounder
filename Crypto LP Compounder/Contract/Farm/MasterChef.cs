@@ -31,7 +31,7 @@ namespace Crypto_LP_Compounder.Contract.Farm
     internal abstract class MasterChef
     {
         protected readonly Log _Log;
-        protected readonly Settings _Settings;
+        protected readonly Settings.CompounderSettings _Settings;
         protected readonly Web3 _Web3;
         protected readonly ERC20 _RewardToken;
         protected readonly ERC20 _TokenA;
@@ -40,7 +40,7 @@ namespace Crypto_LP_Compounder.Contract.Farm
         protected readonly ContractHandler _ContractHandler;
         protected readonly UniswapV2.Router _Router;
 
-        public MasterChef(Log log, Settings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken)
+        public MasterChef(Log log, Settings.CompounderSettings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken)
         {
             _Log = log;
             _Settings = settings;
@@ -59,25 +59,25 @@ namespace Crypto_LP_Compounder.Contract.Farm
             SetTokenSymbol(CurrentDeposit, "LP");
 
             UnderlyingTokenA_Deposit = new();
-            SetTokenSymbol(UnderlyingTokenA_Deposit, _Settings.Farm.FarmType.Split(':')[0].Split('-')[0]);
+            SetTokenSymbol(UnderlyingTokenA_Deposit, _Settings.Farm.FarmType.Split('_')[0].Split('-')[0]);
 
             UnderlyingTokenB_Deposit = new();
-            SetTokenSymbol(UnderlyingTokenB_Deposit, _Settings.Farm.FarmType.Split(':')[0].Split('-')[1]);
+            SetTokenSymbol(UnderlyingTokenB_Deposit, _Settings.Farm.FarmType.Split('_')[0].Split('-')[1]);
 
             CurrentPendingReward = new();
-            SetTokenSymbol(CurrentPendingReward, _Settings.Farm.FarmType.Split(':')[1]);
+            SetTokenSymbol(CurrentPendingReward, _Settings.Farm.FarmType.Split('_')[1]);
 
             TokenA = new();
             TokenA.Value.Value = 1;
-            SetTokenSymbol(TokenA, _Settings.Farm.FarmType.Split(':')[0].Split('-')[0]);
+            SetTokenSymbol(TokenA, _Settings.Farm.FarmType.Split('_')[0].Split('-')[0]);
 
             TokenB = new();
             TokenB.Value.Value = 1;
-            SetTokenSymbol(TokenB, _Settings.Farm.FarmType.Split(':')[0].Split('-')[1]);
+            SetTokenSymbol(TokenB, _Settings.Farm.FarmType.Split('_')[0].Split('-')[1]);
 
             Reward = new();
             Reward.Value.Value = 1;
-            SetTokenSymbol(Reward, _Settings.Farm.FarmType.Split(':')[1]);
+            SetTokenSymbol(Reward, _Settings.Farm.FarmType.Split('_')[1]);
         }
 
         public ValueSymbol CurrentAPR { get; private set; }
