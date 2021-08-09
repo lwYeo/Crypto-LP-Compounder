@@ -50,7 +50,7 @@ namespace Crypto_LP_Compounder
         private BigInteger _LastEstimateGasCostPerTxn;
         private uint _LastProcessTxnCount;
 
-        private DateTimeOffset _LastUpdate;
+        private DateTimeOffset _LastUpdate, _NextLoopTime;
         private readonly ValueSymbol _EstimateGasPerTxn;
 
         string ICompounder.Name => _Settings.Name;
@@ -77,6 +77,10 @@ namespace Crypto_LP_Compounder
                     $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
                     $" ({_Farm.CurrentDeposit.ChainValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})" +
                     $" ({_Farm.OptimalCompoundsPerYear} compounds per year)"
+                    ,
+                    $"Next compound in {(_NextLoopTime - DateTimeOffset.Now).TotalDays:n0} d" +
+                    $" {_NextLoopTime - DateTimeOffset.Now:hh' hr 'mm' min 'ss' sec'}" +
+                    $" ({_NextLoopTime:yyyy-MM-ddTHH:mm:ssK})"
                     ,
                     $"Pending reward value: {_Farm.CurrentPendingReward.Value.Value:n9} {_Farm.CurrentPendingReward.Value.Symbol}" +
                     $" ({_Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentPendingReward.FiatValue.Symbol} /" +
@@ -109,6 +113,8 @@ namespace Crypto_LP_Compounder
 
         int ICompounder.OptimalCompoundsPerYear => _Farm.OptimalCompoundsPerYear;
 
+        DateTimeOffset ICompounder.NextCompoundDateTime => _NextLoopTime;
+
         ValueSymbol ICompounder.EstimateGasPerTxn => _EstimateGasPerTxn;
 
         TokenValue ICompounder.CurrentDeposit => _Farm.CurrentDeposit;
@@ -129,6 +135,7 @@ namespace Crypto_LP_Compounder
 
         public Compounder(Settings.CompounderSettings settings)
         {
+            _NextLoopTime = DateTimeOffset.UnixEpoch;
             _Settings = settings;
 
             Log = new(settings);
@@ -226,8 +233,7 @@ namespace Crypto_LP_Compounder
         public async Task Start()
         {
             int intervalSecond;
-            TimeSpan intervalRemaining;
-            DateTimeOffset beginLoopTime, nextLoopTime;
+            DateTimeOffset beginLoopTime;
             DateTimeOffset lastUpdate = DateTimeOffset.Now;
             Stopwatch stopwatch = new();
 
@@ -240,7 +246,7 @@ namespace Crypto_LP_Compounder
             if (stateBytes?.Length.Equals(sizeof(long) * 2) ?? false)
             {
                 long state = BitConverter.ToInt64(stateBytes.Take(sizeof(long)).ToArray());
-                stateDateTime = DateTimeOffset.FromUnixTimeSeconds(state);
+                stateDateTime = DateTimeOffset.FromUnixTimeSeconds(state).ToOffset(DateTimeOffset.Now.Offset);
 
                 state = BitConverter.ToInt64(stateBytes.Skip(sizeof(long)).ToArray());
                 processTimeTaken = TimeSpan.FromTicks(state);
@@ -278,17 +284,17 @@ namespace Crypto_LP_Compounder
                     Log.IsCompoundProcess = false;
                 }
 
-                nextLoopTime = beginLoopTime;
+                _NextLoopTime = beginLoopTime;
                 intervalSecond = 0;
 
                 stopwatch.Restart();
 
-                while ((nextLoopTime == beginLoopTime || DateTimeOffset.Now < nextLoopTime) && !Program.IsTerminate)
+                while ((_NextLoopTime == beginLoopTime || DateTimeOffset.Now < _NextLoopTime) && !Program.IsTerminate)
                 {
                     // Update interval every 5 minutes as gas fee fluctuates
                     if (stopwatch.Elapsed.Seconds < 1 && stopwatch.Elapsed.Minutes % 5 == 0)
                     {
-                        if (nextLoopTime != beginLoopTime)
+                        if (_NextLoopTime != beginLoopTime)
                         {
                             lastUpdate = DateTimeOffset.Now;
 
@@ -318,13 +324,13 @@ namespace Crypto_LP_Compounder
 
                         intervalSecond -= (int)Math.Floor(processTimeTaken.TotalSeconds);
 
-                        nextLoopTime = beginLoopTime.AddSeconds(intervalSecond);
-
-                        intervalRemaining = nextLoopTime - DateTimeOffset.Now;
+                        _NextLoopTime = beginLoopTime.AddSeconds(intervalSecond);
 
                         Log.WriteLine();
-                        Log.WriteLine($"Next compound in {intervalRemaining.TotalDays:n0} d {intervalRemaining:hh' hr 'mm' min 'ss' sec'}" +
-                            $" ({DateTimeOffset.Now.Add(intervalRemaining):yyyy-MM-dd T HH:mm:ss K})");
+                        Log.WriteLine(
+                            $"Next compound in {(_NextLoopTime - DateTimeOffset.Now).TotalDays:n0} d" +
+                            $" {_NextLoopTime - DateTimeOffset.Now:hh' hr 'mm' min 'ss' sec'}" +
+                            $" ({_NextLoopTime:yyyy-MM-dd T HH:mm:ss K})");
                     }
 
                     await Task.Delay(1000);

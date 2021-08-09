@@ -32,6 +32,8 @@ namespace DTO
 
         int OptimalCompoundsPerYear { get; }
 
+        DateTimeOffset NextCompoundDateTime { get; }
+
         ValueSymbol EstimateGasPerTxn { get; }
 
         TokenValue CurrentDeposit { get; }
