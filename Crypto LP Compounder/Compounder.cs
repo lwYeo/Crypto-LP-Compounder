@@ -71,11 +71,11 @@ namespace Crypto_LP_Compounder
                 return new[] {
                     $"Current APR: {_Farm.CurrentAPR.Value.ToString(_Farm.CurrentAPR.Value < 1000 ? "n3" : "n0")} {_Farm.CurrentAPR.Symbol}" +
                     $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
-                    $" ({_Farm.CurrentDeposit.ChainValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})"
+                    $" {_Farm.CurrentDeposit.ChainValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})"
                     ,
                     $"Optimal APY: {_Farm.OptimalAPY.Value.ToString(_Farm.OptimalAPY.Value < 1000 ? "n3" : "n0")} {_Farm.OptimalAPY.Symbol}" +
                     $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
-                    $" ({_Farm.CurrentDeposit.ChainValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})" +
+                    $" {_Farm.CurrentDeposit.ChainValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})" +
                     $" ({_Farm.OptimalCompoundsPerYear} compounds per year)"
                     ,
                     $"Next compound in {(_NextLoopTime - DateTimeOffset.Now).TotalDays:n0} d" +

@@ -140,6 +140,8 @@ namespace Crypto_LP_Compounder
                         _IsTerminate = true;
                         _IsPause = true;
 
+                        await FlushConsoleLogsAsync();
+
                         LogLineConsole();
                         LogLineConsole(t.Exception.Message);
 
