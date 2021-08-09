@@ -23,12 +23,14 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 {
     internal class Factory
     {
-        private readonly Settings _Settings;
+        private readonly Log _Log;
+        private readonly Settings.CompounderSettings _Settings;
         private readonly Web3 _Web3;
         private readonly ContractHandler _ContractHandler;
 
-        public Factory(Settings settings, Web3 web3)
+        public Factory(Log log, Settings.CompounderSettings settings, Web3 web3)
         {
+            _Log = log;
             _Settings = settings;
             _Web3 = web3;
             _ContractHandler = _Web3.Eth.GetContractHandler(_Settings.LiquidityPool.FactoryContract);
@@ -48,26 +50,26 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
         public async Task HandleCheckLiquidityPool(string lpContract)
         {
-            Program.WriteLineLog();
-            Program.WriteLog("Checking liquidity pair address... ");
+            _Log.WriteLine();
+            _Log.Write("Checking liquidity pair address... ");
             try
             {
                 string pairAddress = await GetPairAddress();
 
                 if (!pairAddress.Equals(lpContract, StringComparison.OrdinalIgnoreCase))
                 {
-                    Program.WriteLineLog("Failed");
-
-                    Program.ExitWithErrorMessage(4, "Invalid LP address from token pair: {0}", pairAddress);
+                    _Log.WriteLine("Failed");
+                    _Log.WriteLine($"Invalid LP address from token pair: {pairAddress}");
+                    Program.ExitWithErrorCode(4);
                 }
 
-                Program.WriteLineLog("Done");
+                _Log.WriteLine("Done");
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog("Failed");
-
-                Program.ExitWithErrorMessage(5, ex.ToString());
+                _Log.WriteLine("Failed");
+                _Log.WriteLine(ex.ToString());
+                Program.ExitWithErrorCode(5);
             }
         }
     }

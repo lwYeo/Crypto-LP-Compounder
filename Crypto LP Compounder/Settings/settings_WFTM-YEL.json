@@ -1,4 +1,6 @@
 {
+  "Name": "WFTM-YEL_YEL",
+  "IsLogAll": true,
   "RPC_URL": "https://rpc.fantom.network/",
   "RPC_Timeout": 120,
   "GasPriceOffsetGwei": 0.0,
@@ -28,7 +30,7 @@
     "TaxFreeContract": ""
   },
   "Farm": {
-    "FarmType": "WFTM-YEL:YEL",
+    "FarmType": "WFTM-YEL_YEL",
     "FarmContract": "0x954b15065e4FA1243Cd45a020766511b68Ea9b6E", //YEL pool
     "RewardContract": "0xD3b71117E6C1558c1553305b44988cd944e97300", //YEL
     "RewardDecimals": 18,

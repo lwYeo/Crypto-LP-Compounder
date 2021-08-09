@@ -24,8 +24,8 @@ namespace Crypto_LP_Compounder.Contract.Farm
 {
     internal class MOMA : MasterChef
     {
-        public MOMA(Settings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken) :
-            base(settings, web3, router, rewardToken)
+        public MOMA(Log log, Settings.CompounderSettings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken) :
+            base(log, settings, web3, router, rewardToken)
         {
         }
 

@@ -14,10 +14,10 @@
    limitations under the License.
 */
 
+using DTO;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -36,35 +36,70 @@ namespace Crypto_LP_Compounder
 
         private static string GetApplicationYear() => "2021";
 
-        private static readonly Queue<object> _LogQueue = new();
-
         private static readonly Queue<string> _ConsoleLogQueue = new();
 
         private static readonly ManualResetEvent _FlushCompleteEvent = new(false);
 
-        private static Compounder _AutoCompounder;
+        private static Compounder[] _Compounders;
+
+        private static readonly Func<ICompounder[]> _GetAllCompounders = () => _Compounders?.OfType<ICompounder>().ToArray();
+
+        private static volatile bool _IsPause;
 
         private static volatile bool _IsTerminate;
 
+        private static Settings.MainSettings _Settings;
+
         internal static bool IsTerminate => _IsTerminate;
 
-        internal static void CreateLineBreak() => WriteLineLog(string.Concat(Enumerable.Repeat("=", 100)));
+        internal static void LogConsole(string log) => _ConsoleLogQueue.Enqueue(log);
 
-        internal static void ExitWithErrorMessage(int exitCode, string errorMessage, params object[] messageParams)
+        internal static void LogLineConsole() => LogConsole(Environment.NewLine);
+
+        internal static void LogLineConsole(string log) => LogConsole(log + Environment.NewLine);
+
+        internal static string GetLineBreak() => string.Concat(Enumerable.Repeat("=", 100));
+
+        internal static void LogLineBreakConsole() => LogLineConsole(GetLineBreak());
+
+        internal static async Task FlushConsoleLogsAsync()
         {
-            WriteLineLog();
+            while (_ConsoleLogQueue.TryPeek(out _)) await Task.Delay(100);
+        }
 
-            if (messageParams?.Any() ?? false)
-                WriteLineLog(string.Format(errorMessage, messageParams));
-            else
-                WriteLineLog(errorMessage);
+        internal static async Task StartConsoleLog()
+        {
+            await Task.Factory.StartNew(() =>
+            {
+                while (!_FlushCompleteEvent.WaitOne(10))
+                    if (_ConsoleLogQueue.TryDequeue(out string log))
+                        Console.Write(log);
+            }
+            , TaskCreationOptions.LongRunning);
+        }
 
-            WriteLineLog();
-            WriteLog("Press any key to continue...");
+        internal static void ExitWithErrorCode(int errorCode)
+        {
+            ExitWithErrorCodeAsync(errorCode).Wait();
+        }
+
+        private static async Task ExitWithErrorCodeAsync(int errorCode)
+        {
+            _IsTerminate = true;
+            _IsPause = true;
+
+            await FlushConsoleLogsAsync();
+
+            LogLineConsole();
+            LogConsole("Press any key to continue...");
+
+            await FlushConsoleLogsAsync();
+
             Console.ReadKey();
-            WriteLineLog();
 
-            Environment.Exit(exitCode);
+            Environment.Exit(errorCode);
+
+            _IsPause = false;
         }
 
         private static async Task Main(string[] args)
@@ -81,130 +116,65 @@ namespace Crypto_LP_Compounder
                 DisableQuickEdit();
             }
 
-            StartProcessLog();
+            _ = StartConsoleLog();
 
             SetConsoleCtrlHandler();
 
-            _AutoCompounder = Compounder.Instance;
+            _Settings = Settings.MainSettings.LoadSettings();
 
-            await _AutoCompounder.Start();
+            if (_Settings.Compounders.Select(c => c.Name).Distinct().Count() < _Settings.Compounders.Count)
+            {
+                LogLineConsole();
+                LogLineConsole("Instance name(s) in all settings file must be unique!");
+                await ExitWithErrorCodeAsync(13);
+            }
 
-            WriteLineLog();
-            CreateLineBreak();
-            WriteLineLog("Autocompounder stopped");
-            CreateLineBreak();
+            LogLineConsole();
+            LogLineConsole("Starting Web API...");
+            _ = WebApi.Program
+                .Start(_Settings.WebApiURL, _GetAllCompounders, args)
+                .ContinueWith(async t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        _IsTerminate = true;
+                        _IsPause = true;
 
-            await WaitForLogsToFlush();
+                        LogLineConsole();
+                        LogLineConsole(t.Exception.Message);
+
+                        await ExitWithErrorCodeAsync(20);
+                    }
+                });
+
+            await Task.Delay(1000); // Wait for web API to initialize
+
+            if (!_IsTerminate)
+            {
+                _Compounders = _Settings.Compounders.Select(settings => new Compounder(settings)).ToArray();
+
+                LogLineConsole();
+                LogLineConsole("Starting autocompounders...");
+
+                await Task.WhenAll(_Compounders.Select(c => c.Start()));
+
+                await Task.WhenAll(_Compounders.Select(c => c.Log.FlushLogsAsync()));
+
+                LogLineConsole();
+                LogLineBreakConsole();
+                LogLineConsole("Autocompounder stopped");
+                LogLineBreakConsole();
+            }
+
+            await FlushConsoleLogsAsync();
+
+            while (_IsPause) await Task.Delay(100);
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), originalConsoleMode);
 
             _FlushCompleteEvent.Set();
         }
-
-        #region Logging
-
-        public static void SetIsProcessingLog(bool isProcessing) => _LogQueue.Enqueue(isProcessing);
-
-        public static void WriteLog(string log) => _LogQueue.Enqueue(log);
-
-        public static void WriteLineLog() => _LogQueue.Enqueue(Environment.NewLine);
-
-        public static void WriteLineLog(string log) => _LogQueue.Enqueue(log + Environment.NewLine);
-
-        public static void WriteLog(string log, params object[] args) => _LogQueue.Enqueue(string.Format(log, args));
-
-        public static void WriteLineLog(string log, params object[] args) => _LogQueue.Enqueue(string.Format(log, args) + Environment.NewLine);
-
-        private static void StartProcessLog()
-        {
-            Task.Factory.StartNew(() =>
-            {
-                bool isLogCompoundProcess = false;
-                string logFileName = string.Empty;
-                string logProcessFileName = string.Empty;
-                StreamWriter logStream = null;
-                StreamWriter logProcessStream = null;
-
-                DateTime recentDate = DateTime.Today.AddDays(-1);
-
-                while (!_FlushCompleteEvent.WaitOne(10))
-                {
-                    try
-                    {
-                        if (logStream == null || recentDate != DateTime.Today)
-                        {
-                            logProcessStream?.Dispose();
-                            logStream?.Dispose();
-
-                            logFileName =
-                                Path.Combine(
-                                    AppContext.BaseDirectory,
-                                    string.Format("{0}.log", DateTime.Today.ToString("yyyy-MM-dd")));
-
-                            logProcessFileName =
-                                Path.Combine(
-                                    AppContext.BaseDirectory,
-                                    string.Format("{0}_Process.log", DateTime.Today.ToString("yyyy-MM-dd")));
-
-                            logStream = new StreamWriter(new FileStream(logFileName, FileMode.Append, FileAccess.Write, FileShare.ReadWrite));
-                            logProcessStream = new StreamWriter(new FileStream(logProcessFileName, FileMode.Append, FileAccess.Write, FileShare.ReadWrite));
-
-                            recentDate = DateTime.Today;
-                        }
-                        else if (_LogQueue.TryPeek(out object preview))
-                        {
-                            if (preview is bool)
-                                isLogCompoundProcess = (bool)_LogQueue.Dequeue();
-                            else
-                            {
-                                string log = (string)_LogQueue.Dequeue();
-
-                                _ConsoleLogQueue.Enqueue(log);
-
-                                logStream.Write(log);
-                                logStream.Flush();
-
-                                if (isLogCompoundProcess)
-                                {
-                                    logProcessStream.Write(log);
-                                    logProcessStream.Flush();
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.ToString());
-                    }
-                }
-                logProcessStream?.Dispose();
-                logStream?.Dispose();
-            },
-            TaskCreationOptions.LongRunning);
-
-            StartConsoleLog();
-        }
-
-        private static void StartConsoleLog()
-        {
-            Task.Factory.StartNew(() =>
-            {
-                while (!_FlushCompleteEvent.WaitOne(10))
-                    if (_ConsoleLogQueue.TryDequeue(out string log))
-                        Console.Write(log);
-            },
-            TaskCreationOptions.LongRunning);
-        }
-
-        private static async Task WaitForLogsToFlush()
-        {
-            await Task.Delay(100);
-            while (_LogQueue.Count > 0) await Task.Delay(100);
-            await Task.Delay(100);
-        }
-
-        #endregion Logging
 
         #region Console Quick Edit
 
@@ -290,21 +260,19 @@ namespace Crypto_LP_Compounder
 
         private static void SetConsoleCtrlHandler()
         {
+            AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
+            {
+                ConsoleCtrlHandler(CtrlType.CTRL_CLOSE_EVENT);
+            };
+            Console.CancelKeyPress += (s, ev) =>
+            {
+                ConsoleCtrlHandler(CtrlType.CTRL_C_EVENT);
+            };
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 _ConsoleCtrlHandler += new EventHandler(ConsoleCtrlHandler);
                 SetConsoleCtrlHandler(_ConsoleCtrlHandler, true);
-            }
-            else
-            {
-                AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
-                {
-                    ConsoleCtrlHandler(CtrlType.CTRL_CLOSE_EVENT);
-                };
-                Console.CancelKeyPress += (s, ev) =>
-                {
-                    ConsoleCtrlHandler(CtrlType.CTRL_C_EVENT);
-                };
             }
         }
 
@@ -317,10 +285,10 @@ namespace Crypto_LP_Compounder
             {
                 if (_IsTerminate) return;
 
-                WriteLineLog();
-                CreateLineBreak();
-                WriteLineLog("Stopping autocompounder...");
-                CreateLineBreak();
+                LogLineConsole();
+                LogLineBreakConsole();
+                LogLineConsole("Stopping autocompounder...");
+                LogLineBreakConsole();
 
                 _IsTerminate = true;
 

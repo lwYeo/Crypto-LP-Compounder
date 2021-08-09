@@ -26,14 +26,16 @@ namespace Crypto_LP_Compounder.Contract
 {
     internal class ERC20
     {
-        private readonly Settings _Settings;
+        private readonly Log _Log;
+        private readonly Settings.CompounderSettings _Settings;
         private readonly Web3 _Web3;
         private readonly ContractHandler _ContractHandler;
 
         public string Address { get; }
 
-        public ERC20(Settings settings, Web3 web3, string tokenAddress)
+        public ERC20(Log log, Settings.CompounderSettings settings, Web3 web3, string tokenAddress)
         {
+            _Log = log;
             Address = tokenAddress;
             _Settings = settings;
             _Web3 = web3;
@@ -109,10 +111,10 @@ namespace Crypto_LP_Compounder.Contract
             {
                 approveAmt = amount * 5; // Minimize future unnecessary approvals
 
-                Program.WriteLineLog("Approving spend of {0:n10} to {1}...",
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(approveAmt, UnitConversion.EthUnit.Wei) /
-                    BigDecimal.Pow(10, decimals)),
-                    contract);
+                _Log.WriteLine(
+                    $"Approving spend of" +
+                    $" {(decimal)(UnitConversion.Convert.FromWeiToBigDecimal(approveAmt, UnitConversion.EthUnit.Wei) / BigDecimal.Pow(10, decimals)):n10}" +
+                    $" to {contract}...");
 
                 BigInteger gasPrice = _Settings.GetGasPrice(_Web3);
 
@@ -127,30 +129,30 @@ namespace Crypto_LP_Compounder.Contract
 
                 if (approveResult.Succeeded())
                 {
-                    Program.WriteLineLog("Success: Approve spend (gas: {0:n10} {1}, txn ID: {2})",
-                        UnitConversion.Convert.FromWei(approveResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        approveResult.TransactionHash);
+                    _Log.WriteLine(
+                        $"Success: Approve spend" +
+                        $" (gas: {UnitConversion.Convert.FromWei(approveResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {approveResult.TransactionHash})");
 
                     return true;
                 }
                 else
                 {
-                    Program.WriteLineLog("Failed: Approve spend, gas: {0:n10} {1}, txn ID: {2}",
-                        UnitConversion.Convert.FromWei(approveResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        approveResult.TransactionHash);
+                    _Log.WriteLine(
+                        $"Failed: Approve spend," +
+                        $" gas: {UnitConversion.Convert.FromWei(approveResult.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {approveResult.TransactionHash}");
 
                     if (approveResult.HasLogs())
-                        Program.WriteLineLog(approveResult.Logs.ToString());
+                        _Log.WriteLine(approveResult.Logs.ToString());
 
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog("Failed: Approve spend rewards");
-                Program.WriteLineLog(ex.ToString());
+                _Log.WriteLine("Failed: Approve spend rewards");
+                _Log.WriteLine(ex.ToString());
 
                 return false;
             }

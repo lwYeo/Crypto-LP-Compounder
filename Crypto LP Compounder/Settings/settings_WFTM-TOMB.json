@@ -1,4 +1,6 @@
 {
+  "Name": "WFTM-TOMB_TSHARE",
+  "IsLogAll": true,
   "RPC_URL": "https://rpc.fantom.network/",
   "RPC_Timeout": 120,
   "GasPriceOffsetGwei": 0.0,
@@ -28,7 +30,7 @@
     "TaxFreeContract": "0xcaf6C0FB8Bcb737C2D5D7e5Db615147a26091De1" //Tax free contract, for TOMB
   },
   "Farm": {
-    "FarmType": "WFTM-TOMB:TSHARE",
+    "FarmType": "WFTM-TOMB_TSHARE",
     "FarmContract": "0xcc0a87F7e7c693042a9Cc703661F5060c80ACb43", //TSHARE reward pool
     "RewardContract": "0x4cdF39285D7Ca8eB3f090fDA0C069ba5F4145B37", //TSHARE
     "RewardDecimals": 18,

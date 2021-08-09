@@ -9,7 +9,7 @@
     <Copyright>Copyright © lwYeo 2021</Copyright>
     <Company>lwYeo@github</Company>
     <Authors>lwYeo</Authors>
-    <Version>0.1.5</Version>
+    <Version>0.1.6</Version>
     <RepositoryType>GitHub</RepositoryType>
     <RepositoryUrl>https://github.com/lwYeo/CryptoLP_Compounder</RepositoryUrl>
     <Product>Crypto LP Compounder</Product>
@@ -29,6 +29,11 @@
 
   <ItemGroup>
     <PackageReference Include="Nethereum.Web3" Version="3.8.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DTO\DTO.csproj" />
+    <ProjectReference Include="..\WebApi\WebApi.csproj" />
   </ItemGroup>
 
   <ItemGroup>

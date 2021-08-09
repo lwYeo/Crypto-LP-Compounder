@@ -23,8 +23,8 @@ namespace Crypto_LP_Compounder.Contract.Farm
 {
     internal class TombFinance : MasterChef
     {
-        public TombFinance(Settings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken) :
-            base(settings, web3, router, rewardToken)
+        public TombFinance(Log log, Settings.CompounderSettings settings, Web3 web3, UniswapV2.Router router, ERC20 rewardToken) :
+            base(log, settings, web3, router, rewardToken)
         {
         }
 

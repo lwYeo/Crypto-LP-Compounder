@@ -29,8 +29,9 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 {
     internal class Router
     {
-        protected readonly Settings _Settings;
-        protected readonly Settings.LiquidityPoolParams _LpSettings;
+        protected readonly Log _Log;
+        protected readonly Settings.CompounderSettings _Settings;
+        protected readonly Settings.CompounderSettings.LiquidityPoolParams _LpSettings;
 
         protected readonly Web3 _Web3;
         protected readonly ContractHandler _ContractHandler;
@@ -39,14 +40,15 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
         private readonly ERC20 _TokenA;
         private readonly ERC20 _TokenB;
 
-        public Router(Settings settings, Web3 web3)
+        public Router(Log log, Settings.CompounderSettings settings, Web3 web3)
         {
+            _Log = log;
             _Settings = settings;
             _LpSettings = settings.LiquidityPool;
             _Web3 = web3;
             _ContractHandler = _Web3.Eth.GetContractHandler(_LpSettings.RouterContract);
-            _TokenA = new(_Settings, _Web3, _Settings.LiquidityPool.TokenA_Contract);
-            _TokenB = new(_Settings, _Web3, _Settings.LiquidityPool.TokenB_Contract);
+            _TokenA = new(_Log, _Settings, _Web3, _Settings.LiquidityPool.TokenA_Contract);
+            _TokenB = new(_Log, _Settings, _Web3, _Settings.LiquidityPool.TokenB_Contract);
 
             if (!string.IsNullOrWhiteSpace(_LpSettings.TaxFreeContract))
                 _TaxFreeContractHandler = _Web3.Eth.GetContractHandler(_LpSettings.TaxFreeContract);
@@ -197,11 +199,12 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
                     _LpSettings.TokenA_Decimals :
                     _LpSettings.TokenB_Decimals);
 
-            Program.WriteLineLog();
-            Program.WriteLineLog("Swapping {0:n10} reward to token {1}...",
-                (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(rewardAmount, UnitConversion.EthUnit.Wei) /
-                    BigDecimal.Pow(10, _Settings.Farm.RewardDecimals)),
-                contractName);
+            BigDecimal rewardDec =
+                UnitConversion.Convert.FromWeiToBigDecimal(rewardAmount, UnitConversion.EthUnit.Wei) /
+                    BigDecimal.Pow(10, _Settings.Farm.RewardDecimals);
+
+            _Log.WriteLine();
+            _Log.WriteLine($"Swapping {(decimal)rewardDec:n10} reward to token {contractName}...");
             try
             {
                 List<string> paths = new() { _Settings.Farm.RewardContract };
@@ -235,10 +238,10 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                 if (swapTxnReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Swap reward to token (gas: {0:n10} {1}, txn ID: {2})",
-                        UnitConversion.Convert.FromWei(swapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        swapTxnReceipt.TransactionHash);
+                    _Log.WriteLine(
+                        $"Failed: Swap reward to token" +
+                        $" (gas: {UnitConversion.Convert.FromWei(swapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {swapTxnReceipt.TransactionHash})");
 
                     return false;
                 }
@@ -253,32 +256,32 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                 tokenAmount = transferInEvents.Select(l => l.Event.Value).Aggregate((currentSum, item) => currentSum + item);
 
-                Program.WriteLineLog("Success: Swap reward to {0:n10} token {1}",
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(tokenAmount, UnitConversion.EthUnit.Wei) / contractDecimals),
-                    contractName);
+                _Log.WriteLine(
+                    $"Success: Swap reward to" +
+                    $" {(decimal)(UnitConversion.Convert.FromWeiToBigDecimal(tokenAmount, UnitConversion.EthUnit.Wei) / contractDecimals):n10}" +
+                    $" token {contractName}");
 
-                Program.WriteLineLog("(gas: {0:n10} {1}, txn ID: {2})",
-                    UnitConversion.Convert.FromWei(swapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                    _Settings.GasSymbol,
-                    swapTxnReceipt.TransactionHash);
+                _Log.WriteLine(
+                    $"(gas: {UnitConversion.Convert.FromWei(swapTxnReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                    $" {_Settings.GasSymbol}, txn ID: {swapTxnReceipt.TransactionHash})");
 
                 return true;
             }
             catch (AggregateException ex)
             {
-                Program.WriteLineLog("Failed: Swap reward to token");
+                _Log.WriteLine("Failed: Swap reward to token");
 
                 if (ex.InnerExceptions.Any(e => e is TaskCanceledException))
-                    Program.WriteLineLog("Timeout: {0:n0} s", _Settings.RPC_Timeout);
+                    _Log.WriteLine($"Timeout: {_Settings.RPC_Timeout:n0} s");
                 else
-                    Program.WriteLineLog(ex.ToString());
+                    _Log.WriteLine(ex.ToString());
 
                 return false;
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog("Failed: Swap reward to token");
-                Program.WriteLineLog(ex.ToString());
+                _Log.WriteLine("Failed: Swap reward to token");
+                _Log.WriteLine(ex.ToString());
 
                 return false;
             }
@@ -292,14 +295,15 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
         {
             lpAmount = BigInteger.Zero;
 
-            Program.WriteLineLog();
+            _Log.WriteLine();
             try
             {
-                Program.WriteLineLog("Adding LP with {0:n10} token A and {1:n10} token B...",
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(tokenA_Amount, UnitConversion.EthUnit.Wei) /
-                        BigDecimal.Pow(10, _LpSettings.TokenA_Decimals)),
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(tokenB_Amount, UnitConversion.EthUnit.Wei) /
-                        BigDecimal.Pow(10, _LpSettings.TokenB_Decimals)));
+                _Log.WriteLine(
+                    "Adding LP with" +
+                    $" {(decimal)(UnitConversion.Convert.FromWeiToBigDecimal(tokenA_Amount, UnitConversion.EthUnit.Wei) / BigDecimal.Pow(10, _LpSettings.TokenA_Decimals)):n10}" +
+                    " token A and" +
+                    $" {(decimal)(UnitConversion.Convert.FromWeiToBigDecimal(tokenB_Amount, UnitConversion.EthUnit.Wei) / BigDecimal.Pow(10, _LpSettings.TokenB_Decimals)):n10}" +
+                    " token B...");
 
                 BigInteger gasPrice = _Settings.GetGasPrice(_Web3);
 
@@ -346,10 +350,10 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                 if (addLiquidityReceipt.Failed())
                 {
-                    Program.WriteLineLog("Failed: Add LP with tokens (gas: {0:n10} {1}, txn ID: {2})",
-                        UnitConversion.Convert.FromWei(addLiquidityReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                        _Settings.GasSymbol,
-                        addLiquidityReceipt.TransactionHash);
+                    _Log.WriteLine(
+                        $"Failed: Add LP with tokens" +
+                        $" (gas: {UnitConversion.Convert.FromWei(addLiquidityReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                        $" {_Settings.GasSymbol}, txn ID: {addLiquidityReceipt.TransactionHash})");
 
                     return false;
                 }
@@ -364,30 +368,32 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                 lpAmount = transferInEvents.Select(l => l.Event.Value).Aggregate((currentSum, item) => currentSum + item);
 
-                Program.WriteLineLog("Success: Added {0:n10} LP tokens (gas: {1:n10} {2}, txn ID: {3})",
-                    (decimal)(UnitConversion.Convert.FromWeiToBigDecimal(lpAmount, UnitConversion.EthUnit.Wei) /
-                        BigDecimal.Pow(10, _LpSettings.LP_Decimals)),
-                    UnitConversion.Convert.FromWei(addLiquidityReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether),
-                    _Settings.GasSymbol,
-                    addLiquidityReceipt.TransactionHash);
+                BigDecimal lpAmountDec =
+                    UnitConversion.Convert.FromWeiToBigDecimal(lpAmount, UnitConversion.EthUnit.Wei) /
+                        BigDecimal.Pow(10, _LpSettings.LP_Decimals);
+
+                _Log.WriteLine(
+                    $"Success: Added {(decimal)lpAmountDec:n10} LP tokens" +
+                    $" (gas: {UnitConversion.Convert.FromWei(addLiquidityReceipt.GasUsed * gasPrice, UnitConversion.EthUnit.Ether):n10}" +
+                    $" {_Settings.GasSymbol}, txn ID: {addLiquidityReceipt.TransactionHash})");
 
                 return true;
             }
             catch (AggregateException ex)
             {
-                Program.WriteLineLog("Failed: Add LP with tokens");
+                _Log.WriteLine("Failed: Add LP with tokens");
 
                 if (ex.InnerExceptions.Any(e => e is TaskCanceledException))
-                    Program.WriteLineLog("Timeout: {0:n0} s", _Settings.RPC_Timeout);
+                    _Log.WriteLine($"Timeout: {_Settings.RPC_Timeout:n0} s");
                 else
-                    Program.WriteLineLog(ex.ToString());
+                    _Log.WriteLine(ex.ToString());
 
                 return false;
             }
             catch (Exception ex)
             {
-                Program.WriteLineLog("Failed: Add LP with tokens");
-                Program.WriteLineLog(ex.ToString());
+                _Log.WriteLine("Failed: Add LP with tokens");
+                _Log.WriteLine(ex.ToString());
 
                 return false;
             }
@@ -414,7 +420,7 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                     if (retryAttempt > maxRetries || Program.IsTerminate) return;
 
-                    Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, maxRetries);
+                    _Log.WriteLine($"Retrying... ({retryAttempt}/{maxRetries})");
                     Task.Delay(5000).Wait();
 
                     if (Program.IsTerminate) return;
@@ -436,7 +442,7 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                     if (retryAttempt > maxRetries || Program.IsTerminate) return;
 
-                    Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, maxRetries);
+                    _Log.WriteLine($"Retrying... ({retryAttempt}/{maxRetries})");
                     Task.Delay(5000).Wait();
 
                     if (Program.IsTerminate) return;
@@ -482,7 +488,7 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                     if (retryAttempt > maxRetries || Program.IsTerminate) return;
 
-                    Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, maxRetries);
+                    _Log.WriteLine($"Retrying... ({retryAttempt}/{maxRetries})");
                     Task.Delay(5000).Wait();
 
                     if (Program.IsTerminate) return;
@@ -502,7 +508,7 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                     if (retryAttempt > maxRetries || Program.IsTerminate) return;
 
-                    Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, maxRetries);
+                    _Log.WriteLine($"Retrying... ({retryAttempt}/{maxRetries})");
                     Task.Delay(5000).Wait();
 
                     if (Program.IsTerminate) return;
@@ -519,7 +525,7 @@ namespace Crypto_LP_Compounder.Contract.UniswapV2
 
                 if (retryAttempt > maxRetries || Program.IsTerminate) return;
 
-                Program.WriteLineLog("Retrying... ({0}/{1})", retryAttempt, maxRetries);
+                _Log.WriteLine($"Retrying... ({retryAttempt}/{maxRetries})");
                 Task.Delay(5000).Wait();
 
                 if (Program.IsTerminate) return;
