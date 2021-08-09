@@ -82,7 +82,7 @@ namespace Crypto_LP_Compounder
                 }
 
                 _LogStream?.Write(log);
-                _LogStream?.Write(log);
+                _LogStream?.Flush();
 
                 Program.LogConsole($"[{_InstanceName}] {log}");
             }
