@@ -34,4 +34,5 @@ Currently only the following has been implemented for, if you have any tokens to
 - WFTM-YEL (YEL)
 - WBNB-MOMA (MOMA)
 
-Please refer to the examples found in the sample settings files.
+Please refer to the examples found in the sample settings files.  
+Default web API can be accessed from http://127.0.0.1:5050/instances (URL can be changed in settings.json file)
