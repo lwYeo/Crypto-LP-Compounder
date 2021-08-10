@@ -24,7 +24,7 @@ namespace WebApi.Controllers
     [Route("[controller]")]
     public class InstancesController : ControllerBase
     {
-        public InstancesController(ILogger<InstancesController> logger)
+        public InstancesController(ILogger<InstancesController> _)
         {
         }
 

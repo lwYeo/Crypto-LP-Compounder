@@ -82,19 +82,23 @@ namespace Crypto_LP_Compounder
                     $" {_NextLoopTime - DateTimeOffset.Now:hh' hr 'mm' min 'ss' sec'}" +
                     $" ({_NextLoopTime:yyyy-MM-ddTHH:mm:ssK})"
                     ,
-                    $"Pending reward value: {_Farm.CurrentPendingReward.Value.Value:n9} {_Farm.CurrentPendingReward.Value.Symbol}" +
+                    $"Total liquidity:" +
+                    $" {_Farm.CurrentDeposit.FiatValue.Value + _Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+                    $" {_Farm.CurrentDeposit.ChainValue.Value + _Farm.CurrentPendingReward.ChainValue.Value:n9} {_Farm.CurrentDeposit.ChainValue.Symbol}"
+                    ,
+                    $"Pending reward: {_Farm.CurrentPendingReward.Value.Value:n9} {_Farm.CurrentPendingReward.Value.Symbol}" +
                     $" ({_Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentPendingReward.FiatValue.Symbol} /" +
                     $" {_Farm.CurrentPendingReward.ChainValue.Value:n9} {_Farm.CurrentPendingReward.ChainValue.Symbol})"
                     ,
-                    $"Deposit value: {_Farm.CurrentDeposit.Value.Value:n9} {_Farm.CurrentDeposit.Value.Symbol}" +
+                    $"Current deposit: {_Farm.CurrentDeposit.Value.Value:n9} {_Farm.CurrentDeposit.Value.Symbol}" +
                     $" ({_Farm.CurrentDeposit.FiatValue.Value:n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
                     $" {_Farm.CurrentDeposit.ChainValue.Value:n9} {_Farm.CurrentDeposit.ChainValue.Symbol})"
                     ,
-                    $"Underlying Token A deposit value: {_Farm.UnderlyingTokenA_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenA_Deposit.Value.Symbol}" +
+                    $"Underlying Token A deposit: {_Farm.UnderlyingTokenA_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenA_Deposit.Value.Symbol}" +
                     $" ({_Farm.UnderlyingTokenA_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenA_Deposit.FiatValue.Symbol} /" +
                     $" {_Farm.UnderlyingTokenA_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenA_Deposit.ChainValue.Symbol})"
                     ,
-                    $"Underlying Token B deposit value: {_Farm.UnderlyingTokenB_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenB_Deposit.Value.Symbol}" +
+                    $"Underlying Token B deposit: {_Farm.UnderlyingTokenB_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenB_Deposit.Value.Symbol}" +
                     $" ({_Farm.UnderlyingTokenB_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenB_Deposit.FiatValue.Symbol} /" +
                     $" {_Farm.UnderlyingTokenB_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenB_Deposit.ChainValue.Symbol})"
                     ,
