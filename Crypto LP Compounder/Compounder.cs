@@ -98,6 +98,9 @@ namespace Crypto_LP_Compounder
                     $" ({_Farm.UnderlyingTokenB_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenB_Deposit.FiatValue.Symbol} /" +
                     $" {_Farm.UnderlyingTokenB_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenB_Deposit.ChainValue.Symbol})"
                     ,
+                    $"Reward value: {_Farm.Reward.FiatValue.Value:n2} {_Farm.Reward.FiatValue.Symbol} /" +
+                    $" {_Farm.Reward.ChainValue.Value:n9} {_Farm.Reward.ChainValue.Symbol}"
+                    ,
                     $"Token A value: {_Farm.TokenA.FiatValue.Value:n2} {_Farm.TokenA.FiatValue.Symbol} /" +
                     $" {_Farm.TokenA.ChainValue.Value:n9} {_Farm.TokenA.ChainValue.Symbol}"
                     ,
