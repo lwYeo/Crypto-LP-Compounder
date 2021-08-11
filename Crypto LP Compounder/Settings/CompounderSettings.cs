@@ -16,10 +16,7 @@
 
 using Nethereum.Util;
 using Nethereum.Web3;
-using System;
-using System.Linq;
 using System.Numerics;
-using System.Threading;
 
 namespace Crypto_LP_Compounder.Settings
 {
@@ -36,7 +33,7 @@ namespace Crypto_LP_Compounder.Settings
 
             CompounderSettings settings = null;
 
-            if (System.IO.File.Exists(filePath))
+            if (File.Exists(filePath))
             {
                 settings = Json.DeserializeFromFile<CompounderSettings>(filePath);
                 Program.LogLineConsole("Done!");
@@ -95,7 +92,7 @@ namespace Crypto_LP_Compounder.Settings
                         Program.DisableQuickEdit();
                         isSettingChanged = true;
                     }
-                    else if (System.IO.Path.GetInvalidFileNameChars().Any(invalidChar => settings.Name.Contains(invalidChar)))
+                    else if (Path.GetInvalidFileNameChars().Any(invalidChar => settings.Name.Contains(invalidChar)))
                     {
                         Program.LogLineConsole();
                         Program.LogLineConsole("Instance name contains invalid character(s)!");

@@ -21,12 +21,8 @@ using Nethereum.Util;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Crypto_LP_Compounder
 {
@@ -50,7 +46,9 @@ namespace Crypto_LP_Compounder
         private BigInteger _LastEstimateGasCostPerTxn;
         private uint _LastProcessTxnCount;
 
-        private DateTimeOffset _LastUpdate, _NextLoopTime;
+        private DateTimeOffset _LastCompoundDateTime, _LastUpdate, _NextLoopDateTime;
+        private TimeSpan _LastProcessTimeTaken;
+
         private readonly ValueSymbol _EstimateGasPerTxn;
 
         string ICompounder.Name => _Settings.Name;
@@ -64,55 +62,51 @@ namespace Crypto_LP_Compounder
                 _LastUpdate.Second,
                 _LastUpdate.Offset);
 
-        string[] ICompounder.Summary
-        {
-            get
+        string[] ICompounder.Summary =>
+            new[]
             {
-                return new[] {
-                    $"Current APR: {_Farm.CurrentAPR.Value.ToString(_Farm.CurrentAPR.Value < 1000 ? "n3" : "n0")} {_Farm.CurrentAPR.Symbol}" +
-                    $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
-                    $" {_Farm.CurrentDeposit.ChainValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})"
-                    ,
-                    $"Optimal APY: {_Farm.OptimalAPY.Value.ToString(_Farm.OptimalAPY.Value < 1000 ? "n3" : "n0")} {_Farm.OptimalAPY.Symbol}" +
-                    $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
-                    $" {_Farm.CurrentDeposit.ChainValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})" +
-                    $" ({_Farm.OptimalCompoundsPerYear} compounds per year)"
-                    ,
-                    $"Next compound in {(_NextLoopTime - DateTimeOffset.Now).TotalDays:n0} d" +
-                    $" {_NextLoopTime - DateTimeOffset.Now:hh' hr 'mm' min 'ss' sec'}" +
-                    $" ({_NextLoopTime:yyyy-MM-ddTHH:mm:ssK})"
-                    ,
-                    $"Total liquidity:" +
-                    $" {_Farm.CurrentDeposit.FiatValue.Value + _Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
-                    $" {_Farm.CurrentDeposit.ChainValue.Value + _Farm.CurrentPendingReward.ChainValue.Value:n9} {_Farm.CurrentDeposit.ChainValue.Symbol}"
-                    ,
-                    $"Pending reward: {_Farm.CurrentPendingReward.Value.Value:n9} {_Farm.CurrentPendingReward.Value.Symbol}" +
-                    $" ({_Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentPendingReward.FiatValue.Symbol} /" +
-                    $" {_Farm.CurrentPendingReward.ChainValue.Value:n9} {_Farm.CurrentPendingReward.ChainValue.Symbol})"
-                    ,
-                    $"Current deposit: {_Farm.CurrentDeposit.Value.Value:n9} {_Farm.CurrentDeposit.Value.Symbol}" +
-                    $" ({_Farm.CurrentDeposit.FiatValue.Value:n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
-                    $" {_Farm.CurrentDeposit.ChainValue.Value:n9} {_Farm.CurrentDeposit.ChainValue.Symbol})"
-                    ,
-                    $"Underlying Token A deposit: {_Farm.UnderlyingTokenA_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenA_Deposit.Value.Symbol}" +
-                    $" ({_Farm.UnderlyingTokenA_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenA_Deposit.FiatValue.Symbol} /" +
-                    $" {_Farm.UnderlyingTokenA_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenA_Deposit.ChainValue.Symbol})"
-                    ,
-                    $"Underlying Token B deposit: {_Farm.UnderlyingTokenB_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenB_Deposit.Value.Symbol}" +
-                    $" ({_Farm.UnderlyingTokenB_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenB_Deposit.FiatValue.Symbol} /" +
-                    $" {_Farm.UnderlyingTokenB_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenB_Deposit.ChainValue.Symbol})"
-                    ,
-                    $"Reward value: {_Farm.Reward.FiatValue.Value:n2} {_Farm.Reward.FiatValue.Symbol} /" +
-                    $" {_Farm.Reward.ChainValue.Value:n9} {_Farm.Reward.ChainValue.Symbol}"
-                    ,
-                    $"Token A value: {_Farm.TokenA.FiatValue.Value:n2} {_Farm.TokenA.FiatValue.Symbol} /" +
-                    $" {_Farm.TokenA.ChainValue.Value:n9} {_Farm.TokenA.ChainValue.Symbol}"
-                    ,
-                    $"Token B value: {_Farm.TokenB.FiatValue.Value:n2} {_Farm.TokenB.FiatValue.Symbol} /" +
-                    $" {_Farm.TokenB.ChainValue.Value:n9} {_Farm.TokenB.ChainValue.Symbol}"
-                };
-            }
-        }
+                $"Current APR: {_Farm.CurrentAPR.Value.ToString(_Farm.CurrentAPR.Value < 1000 ? "n3" : "n0")} {_Farm.CurrentAPR.Symbol}" +
+                $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+                $" {_Farm.CurrentDeposit.ChainValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})"
+                ,
+                $"Optimal APY: {_Farm.OptimalAPY.Value.ToString(_Farm.OptimalAPY.Value < 1000 ? "n3" : "n0")} {_Farm.OptimalAPY.Symbol}" +
+                $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+                $" {_Farm.CurrentDeposit.ChainValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})" +
+                $" ({_Farm.OptimalCompoundsPerYear} compounds per year)"
+                ,
+                $"Next estimated compound in {(_NextLoopDateTime - DateTimeOffset.Now).TotalDays:n0} d" +
+                $" {_NextLoopDateTime - DateTimeOffset.Now:hh' hr 'mm' min 'ss' sec'}" +
+                $" ({_NextLoopDateTime:yyyy-MM-ddTHH:mm:ssK})"
+                ,
+                $"Total liquidity:" +
+                $" {_Farm.CurrentDeposit.FiatValue.Value + _Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+                $" {_Farm.CurrentDeposit.ChainValue.Value + _Farm.CurrentPendingReward.ChainValue.Value:n9} {_Farm.CurrentDeposit.ChainValue.Symbol}"
+                ,
+                $"Pending reward: {_Farm.CurrentPendingReward.Value.Value:n9} {_Farm.CurrentPendingReward.Value.Symbol}" +
+                $" ({_Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentPendingReward.FiatValue.Symbol} /" +
+                $" {_Farm.CurrentPendingReward.ChainValue.Value:n9} {_Farm.CurrentPendingReward.ChainValue.Symbol})"
+                ,
+                $"Current deposit: {_Farm.CurrentDeposit.Value.Value:n9} {_Farm.CurrentDeposit.Value.Symbol}" +
+                $" ({_Farm.CurrentDeposit.FiatValue.Value:n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+                $" {_Farm.CurrentDeposit.ChainValue.Value:n9} {_Farm.CurrentDeposit.ChainValue.Symbol})"
+                ,
+                $"Underlying Token A deposit: {_Farm.UnderlyingTokenA_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenA_Deposit.Value.Symbol}" +
+                $" ({_Farm.UnderlyingTokenA_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenA_Deposit.FiatValue.Symbol} /" +
+                $" {_Farm.UnderlyingTokenA_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenA_Deposit.ChainValue.Symbol})"
+                ,
+                $"Underlying Token B deposit: {_Farm.UnderlyingTokenB_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenB_Deposit.Value.Symbol}" +
+                $" ({_Farm.UnderlyingTokenB_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenB_Deposit.FiatValue.Symbol} /" +
+                $" {_Farm.UnderlyingTokenB_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenB_Deposit.ChainValue.Symbol})"
+                ,
+                $"Reward value: {_Farm.Reward.FiatValue.Value:n2} {_Farm.Reward.FiatValue.Symbol} /" +
+                $" {_Farm.Reward.ChainValue.Value:n9} {_Farm.Reward.ChainValue.Symbol}"
+                ,
+                $"Token A value: {_Farm.TokenA.FiatValue.Value:n2} {_Farm.TokenA.FiatValue.Symbol} /" +
+                $" {_Farm.TokenA.ChainValue.Value:n9} {_Farm.TokenA.ChainValue.Symbol}"
+                ,
+                $"Token B value: {_Farm.TokenB.FiatValue.Value:n2} {_Farm.TokenB.FiatValue.Symbol} /" +
+                $" {_Farm.TokenB.ChainValue.Value:n9} {_Farm.TokenB.ChainValue.Symbol}"
+            };
 
         ValueSymbol ICompounder.CurrentAPR => _Farm.CurrentAPR;
 
@@ -120,7 +114,11 @@ namespace Crypto_LP_Compounder
 
         int ICompounder.OptimalCompoundsPerYear => _Farm.OptimalCompoundsPerYear;
 
-        DateTimeOffset ICompounder.NextCompoundDateTime => _NextLoopTime;
+        DateTimeOffset ICompounder.LastCompoundDateTime => _LastCompoundDateTime;
+
+        TimeSpan ICompounder.LastCompoundProcessDuration => TimeSpan.FromSeconds(Math.Round(_LastProcessTimeTaken.TotalSeconds));
+
+        DateTimeOffset ICompounder.NextEstimateCompoundDateTime => _NextLoopDateTime;
 
         ValueSymbol ICompounder.EstimateGasPerTxn => _EstimateGasPerTxn;
 
@@ -142,7 +140,9 @@ namespace Crypto_LP_Compounder
 
         public Compounder(Settings.CompounderSettings settings)
         {
-            _NextLoopTime = DateTimeOffset.UnixEpoch;
+            _LastProcessTimeTaken = TimeSpan.MinValue;
+            _LastCompoundDateTime = DateTimeOffset.UnixEpoch;
+            _NextLoopDateTime = DateTimeOffset.UnixEpoch;
             _Settings = settings;
 
             Log = new(settings);
@@ -240,15 +240,13 @@ namespace Crypto_LP_Compounder
         public async Task Start()
         {
             int intervalSecond;
-            DateTimeOffset beginLoopTime;
             DateTimeOffset lastUpdate = DateTimeOffset.Now;
             Stopwatch stopwatch = new();
 
             DateTimeOffset stateDateTime = DateTimeOffset.UnixEpoch;
-            TimeSpan processTimeTaken = TimeSpan.MinValue;
 
-            string statePath = System.IO.Path.Combine(AppContext.BaseDirectory, "state_" + _Settings.Name);
-            byte[] stateBytes = System.IO.File.Exists(statePath) ? System.IO.File.ReadAllBytes(statePath) : null;
+            string statePath = Path.Combine(AppContext.BaseDirectory, "state_" + _Settings.Name);
+            byte[] stateBytes = File.Exists(statePath) ? File.ReadAllBytes(statePath) : null;
 
             if (stateBytes?.Length.Equals(sizeof(long) * 2) ?? false)
             {
@@ -256,14 +254,14 @@ namespace Crypto_LP_Compounder
                 stateDateTime = DateTimeOffset.FromUnixTimeSeconds(state).ToOffset(DateTimeOffset.Now.Offset);
 
                 state = BitConverter.ToInt64(stateBytes.Skip(sizeof(long)).ToArray());
-                processTimeTaken = TimeSpan.FromTicks(state);
+                _LastProcessTimeTaken = TimeSpan.FromTicks(state);
             }
 
             while (!Program.IsTerminate)
             {
                 if (stateDateTime > DateTimeOffset.UnixEpoch)
                 {
-                    beginLoopTime = stateDateTime;
+                    _LastCompoundDateTime = stateDateTime;
                     stateDateTime = DateTimeOffset.UnixEpoch;
                 }
                 else
@@ -271,37 +269,36 @@ namespace Crypto_LP_Compounder
                     Log.IsCompoundProcess = true;
 
                     stopwatch.Restart();
+                    _LastCompoundDateTime = DateTimeOffset.Now;
 
                     await ProcessCompound();
 
-                    processTimeTaken = stopwatch.Elapsed;
+                    _LastProcessTimeTaken = stopwatch.Elapsed;
 
-                    Log.WriteLine($"Time taken: {processTimeTaken.TotalHours:n0} hr {processTimeTaken:mm' min 'ss' sec'}");
+                    Log.WriteLine($"Time taken: {_LastProcessTimeTaken.TotalHours:n0} hr {_LastProcessTimeTaken:mm' min 'ss' sec'}");
                     Log.WriteLineBreak();
 
-                    beginLoopTime = DateTimeOffset.Now;
-
                     stateBytes =
-                        BitConverter.GetBytes(beginLoopTime.ToUnixTimeSeconds()).
-                        Concat(BitConverter.GetBytes(processTimeTaken.Ticks)).
+                        BitConverter.GetBytes(_LastCompoundDateTime.ToUnixTimeSeconds()).
+                        Concat(BitConverter.GetBytes(_LastProcessTimeTaken.Ticks)).
                         ToArray();
 
-                    _ = System.IO.File.WriteAllBytesAsync(statePath, stateBytes);
+                    _ = File.WriteAllBytesAsync(statePath, stateBytes);
 
                     Log.IsCompoundProcess = false;
                 }
 
-                _NextLoopTime = beginLoopTime;
+                _NextLoopDateTime = _LastCompoundDateTime;
                 intervalSecond = 0;
 
                 stopwatch.Restart();
 
-                while ((_NextLoopTime == beginLoopTime || DateTimeOffset.Now < _NextLoopTime) && !Program.IsTerminate)
+                while ((_NextLoopDateTime == _LastCompoundDateTime || DateTimeOffset.Now < _NextLoopDateTime) && !Program.IsTerminate)
                 {
                     // Update interval every 5 minutes as gas fee fluctuates
                     if (stopwatch.Elapsed.Seconds < 1 && stopwatch.Elapsed.Minutes % 5 == 0)
                     {
-                        if (_NextLoopTime != beginLoopTime)
+                        if (_NextLoopDateTime != _LastCompoundDateTime)
                         {
                             lastUpdate = DateTimeOffset.Now;
 
@@ -329,15 +326,15 @@ namespace Crypto_LP_Compounder
                         _EstimateGasPerTxn.Value =
                             (decimal)UnitConversion.Convert.FromWeiToBigDecimal(_LastEstimateGasCostPerTxn, UnitConversion.EthUnit.Ether);
 
-                        intervalSecond -= (int)Math.Floor(processTimeTaken.TotalSeconds);
+                        intervalSecond -= (int)Math.Floor(_LastProcessTimeTaken.TotalSeconds);
 
-                        _NextLoopTime = beginLoopTime.AddSeconds(intervalSecond);
+                        _NextLoopDateTime = _LastCompoundDateTime.AddSeconds(intervalSecond);
 
                         Log.WriteLine();
                         Log.WriteLine(
-                            $"Next compound in {(_NextLoopTime - DateTimeOffset.Now).TotalDays:n0} d" +
-                            $" {_NextLoopTime - DateTimeOffset.Now:hh' hr 'mm' min 'ss' sec'}" +
-                            $" ({_NextLoopTime:yyyy-MM-dd T HH:mm:ss K})");
+                            $"Next compound in {(_NextLoopDateTime - DateTimeOffset.Now).TotalDays:n0} d" +
+                            $" {_NextLoopDateTime - DateTimeOffset.Now:hh' hr 'mm' min 'ss' sec'}" +
+                            $" ({_NextLoopDateTime:yyyy-MM-dd T HH:mm:ss K})");
                     }
 
                     await Task.Delay(1000);

@@ -16,8 +16,6 @@
 
 using Nethereum.Contracts.ContractHandlers;
 using Nethereum.Web3;
-using System;
-using System.Threading.Tasks;
 
 namespace Crypto_LP_Compounder.Contract.UniswapV2
 {

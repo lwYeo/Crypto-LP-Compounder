@@ -20,11 +20,7 @@ using Nethereum.Contracts.ContractHandlers;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
 using Nethereum.Web3;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Crypto_LP_Compounder.Contract.Farm
 {
@@ -596,8 +592,8 @@ namespace Crypto_LP_Compounder.Contract.Farm
                             $" % ({compoundPerYear:n0} compounds / " +
                             (optimalUsdPerYr < 1000 ? $"{(decimal)optimalUsdPerYr:n2}" : $"{(decimal)optimalUsdPerYr:n0}") +
                             $" USD / " +
-                            (optimalEthPerYr < 1000 ? $"{(decimal)optimalEthPerYr:n10}" : $"{_Settings.GasSymbol:n0}") +
-                            $" {4} per year)");
+                            (optimalEthPerYr < 1000 ? $"{(decimal)optimalEthPerYr:n10}" : $"{(decimal)optimalEthPerYr:n0}") +
+                            $" {_Settings.GasSymbol} per year)");
                 }
                 else
                 {

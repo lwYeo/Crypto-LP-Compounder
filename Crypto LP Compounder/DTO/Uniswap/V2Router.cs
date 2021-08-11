@@ -16,7 +16,6 @@
 
 using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Contracts;
-using System.Collections.Generic;
 using System.Numerics;
 
 namespace Crypto_LP_Compounder.DTO.Uniswap

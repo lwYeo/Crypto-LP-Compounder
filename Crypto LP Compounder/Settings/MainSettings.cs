@@ -14,9 +14,6 @@
    limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace Crypto_LP_Compounder.Settings
@@ -31,9 +28,9 @@ namespace Crypto_LP_Compounder.Settings
             Program.LogConsole("Loading main settings... ");
 
             MainSettings settings = null;
-            string filePath = System.IO.Path.Combine(AppContext.BaseDirectory, FileName);
+            string filePath = Path.Combine(AppContext.BaseDirectory, FileName);
 
-            if (System.IO.File.Exists(filePath))
+            if (File.Exists(filePath))
             {
                 settings = Json.DeserializeFromFile<MainSettings>(filePath);
                 Program.LogLineConsole("Done!");
@@ -47,7 +44,7 @@ namespace Crypto_LP_Compounder.Settings
             settings.Compounders.AddRange(
                 settings.SettingsFileNames.Select(
                     fileName => CompounderSettings.LoadSettings(
-                        System.IO.Path.Combine(AppContext.BaseDirectory, fileName))));
+                        Path.Combine(AppContext.BaseDirectory, fileName))));
 
             if (!settings.Compounders.Any())
             {

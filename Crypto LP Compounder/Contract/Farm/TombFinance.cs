@@ -17,7 +17,6 @@
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Crypto_LP_Compounder.Contract.Farm
 {
