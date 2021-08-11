@@ -174,6 +174,7 @@ namespace Crypto_LP_Compounder
             Log.WriteLine("IsLogAll:          " + _Settings.IsLogAll.ToString());
             Log.WriteLine("RPC URL:           " + _Settings.RPC_URL);
             Log.WriteLine("RPC_Timeout:       " + _Settings.RPC_Timeout.ToString() + " s");
+            Log.WriteLine("RPC_ChainID:       " + _Settings.RPC_ChainID?.ToString() ?? "null");
             Log.WriteLine("GasPriceOffsetGwei:" + _Settings.GasPriceOffsetGwei.ToString() + " Gwei");
             Log.WriteLine("FixedGasPriceGwei: " + sFixedGasGwei);
             Log.WriteLine("MinGasPriceGwei:   " + _Settings.GetUserMinGasPrice().ToString() + " Gwei");
@@ -201,7 +202,7 @@ namespace Crypto_LP_Compounder
             Log.WriteLine("PoolID:            " + _Settings.Farm.FarmPoolID.ToString());
             Log.WriteLine("ProcessAllRewards: " + _Settings.Farm.ProcessAllRewards.ToString());
 
-            Account account = new(Crypto_Crypt.Factory.Instance.Decrypt(_Settings.Wallet.PrivateKeyCrypt));
+            Account account = new(Crypto_Crypt.Factory.Instance.Decrypt(_Settings.Wallet.PrivateKeyCrypt), _Settings.RPC_ChainID);
 
             if (!account.Address.Equals(_Settings.Wallet.Address, StringComparison.OrdinalIgnoreCase))
             {

@@ -3,6 +3,7 @@
   "IsLogAll": true,
   "RPC_URL": "https://rpc.fantom.network/",
   "RPC_Timeout": 120,
+  "RPC_ChainID": 250,
   "GasPriceOffsetGwei": 0.0,
   "FixedGasPriceGwei": 0.0,
   "MinGasPriceGwei": 0.0,

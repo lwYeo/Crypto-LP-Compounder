@@ -3,6 +3,7 @@
   "IsLogAll": true,
   "RPC_URL": "https://bsc-dataseed1.binance.org/",
   "RPC_Timeout": 120,
+  "RPC_ChainID": 56,
   "GasPriceOffsetGwei": 0.0,
   "FixedGasPriceGwei": 0.0,
   "MinGasPriceGwei": 0.0,

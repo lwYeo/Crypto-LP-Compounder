@@ -347,6 +347,8 @@ namespace Crypto_LP_Compounder.Settings
 
         public uint RPC_Timeout { get; set; } = 120;
 
+        public ulong? RPC_ChainID { get; set; } = null;
+
         public float GasPriceOffsetGwei { get; set; } = 0.0f;
 
         public float FixedGasPriceGwei { get; set; } = 0.0f;
