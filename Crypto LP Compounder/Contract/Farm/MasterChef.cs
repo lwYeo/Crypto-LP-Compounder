@@ -64,15 +64,12 @@ namespace Crypto_LP_Compounder.Contract.Farm
             SetTokenSymbol(CurrentPendingReward, _Settings.Farm.FarmType.Split('_')[1]);
 
             TokenA = new();
-            TokenA.Value.Value = 1;
             SetTokenSymbol(TokenA, _Settings.Farm.FarmType.Split('_')[0].Split('-')[0]);
 
             TokenB = new();
-            TokenB.Value.Value = 1;
             SetTokenSymbol(TokenB, _Settings.Farm.FarmType.Split('_')[0].Split('-')[1]);
 
             Reward = new();
-            Reward.Value.Value = 1;
             SetTokenSymbol(Reward, _Settings.Farm.FarmType.Split('_')[1]);
         }
 
@@ -90,17 +87,24 @@ namespace Crypto_LP_Compounder.Contract.Farm
 
         public TokenValue CurrentPendingReward { get; private set; }
 
-        public TokenValue TokenA { get; private set; }
+        public SingleTokenValue TokenA { get; private set; }
 
-        public TokenValue TokenB { get; private set; }
+        public SingleTokenValue TokenB { get; private set; }
 
-        public TokenValue Reward { get; private set; }
+        public SingleTokenValue Reward { get; private set; }
 
         private void SetTokenSymbol(TokenValue token, string valueSymbol)
         {
             token.FiatValue.Symbol = "USD";
             token.ChainValue.Symbol = _Settings.GasSymbol;
             token.Value.Symbol = valueSymbol;
+        }
+
+        private void SetTokenSymbol(SingleTokenValue token, string valueSymbol)
+        {
+            token.FiatValue.Symbol = "USD";
+            token.ChainValue.Symbol = _Settings.GasSymbol;
+            token.Symbol = valueSymbol;
         }
 
         public abstract Task<BigInteger> GetRewardPerSecondTask();

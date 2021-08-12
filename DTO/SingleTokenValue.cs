@@ -16,13 +16,13 @@
 
 namespace DTO
 {
-    public class TokenValue : BaseValue
+    public class SingleTokenValue : BaseValue
     {
-        public ValueSymbol Value { get; }
+        public string Symbol { get; set; }
 
-        public TokenValue() : base()
+        public SingleTokenValue() : base()
         {
-            Value = new();
+            Symbol = string.Empty;
         }
     }
 }

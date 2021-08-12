@@ -26,7 +26,7 @@ using System.Numerics;
 
 namespace Crypto_LP_Compounder
 {
-    internal class Compounder : ICompounder
+    internal class Compounder : ICompounder, ISummary
     {
         private const float DevFee = 1.0f;
         private const string DevAddress = "0x9172ff7884CEFED19327aDaCe9C470eF1796105c";
@@ -51,7 +51,9 @@ namespace Crypto_LP_Compounder
 
         private readonly ValueSymbol _EstimateGasPerTxn;
 
-        string ICompounder.Name => _Settings.Name;
+        #region ICompounder
+
+        string ICompounder.InstanceName => _Settings.Name;
 
         DateTimeOffset ICompounder.LastUpdate =>
             new(_LastUpdate.Year,
@@ -62,63 +64,31 @@ namespace Crypto_LP_Compounder
                 _LastUpdate.Second,
                 _LastUpdate.Offset);
 
-        string[] ICompounder.Summary =>
-            new[]
-            {
-                $"Current APR: {_Farm.CurrentAPR.Value.ToString(_Farm.CurrentAPR.Value < 1000 ? "n3" : "n0")} {_Farm.CurrentAPR.Symbol}" +
-                $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
-                $" {_Farm.CurrentDeposit.ChainValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})"
-                ,
-                $"Optimal APY: {_Farm.OptimalAPY.Value.ToString(_Farm.OptimalAPY.Value < 1000 ? "n3" : "n0")} {_Farm.OptimalAPY.Symbol}" +
-                $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
-                $" {_Farm.CurrentDeposit.ChainValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.ChainValue.Symbol})" +
-                $" ({_Farm.OptimalCompoundsPerYear} compounds per year)"
-                ,
-                $"Next estimated compound in {(_NextLoopDateTime - DateTimeOffset.Now).TotalDays:n0} d" +
-                $" {_NextLoopDateTime - DateTimeOffset.Now:hh' hr 'mm' min 'ss' sec'}" +
-                $" ({_NextLoopDateTime:yyyy-MM-ddTHH:mm:ssK})"
-                ,
-                $"Total liquidity:" +
-                $" {_Farm.CurrentDeposit.FiatValue.Value + _Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
-                $" {_Farm.CurrentDeposit.ChainValue.Value + _Farm.CurrentPendingReward.ChainValue.Value:n9} {_Farm.CurrentDeposit.ChainValue.Symbol}"
-                ,
-                $"Pending reward: {_Farm.CurrentPendingReward.Value.Value:n9} {_Farm.CurrentPendingReward.Value.Symbol}" +
-                $" ({_Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentPendingReward.FiatValue.Symbol} /" +
-                $" {_Farm.CurrentPendingReward.ChainValue.Value:n9} {_Farm.CurrentPendingReward.ChainValue.Symbol})"
-                ,
-                $"Current deposit: {_Farm.CurrentDeposit.Value.Value:n9} {_Farm.CurrentDeposit.Value.Symbol}" +
-                $" ({_Farm.CurrentDeposit.FiatValue.Value:n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
-                $" {_Farm.CurrentDeposit.ChainValue.Value:n9} {_Farm.CurrentDeposit.ChainValue.Symbol})"
-                ,
-                $"Underlying Token A deposit: {_Farm.UnderlyingTokenA_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenA_Deposit.Value.Symbol}" +
-                $" ({_Farm.UnderlyingTokenA_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenA_Deposit.FiatValue.Symbol} /" +
-                $" {_Farm.UnderlyingTokenA_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenA_Deposit.ChainValue.Symbol})"
-                ,
-                $"Underlying Token B deposit: {_Farm.UnderlyingTokenB_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenB_Deposit.Value.Symbol}" +
-                $" ({_Farm.UnderlyingTokenB_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenB_Deposit.FiatValue.Symbol} /" +
-                $" {_Farm.UnderlyingTokenB_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenB_Deposit.ChainValue.Symbol})"
-                ,
-                $"Reward value: {_Farm.Reward.FiatValue.Value:n2} {_Farm.Reward.FiatValue.Symbol} /" +
-                $" {_Farm.Reward.ChainValue.Value:n9} {_Farm.Reward.ChainValue.Symbol}"
-                ,
-                $"Token A value: {_Farm.TokenA.FiatValue.Value:n2} {_Farm.TokenA.FiatValue.Symbol} /" +
-                $" {_Farm.TokenA.ChainValue.Value:n9} {_Farm.TokenA.ChainValue.Symbol}"
-                ,
-                $"Token B value: {_Farm.TokenB.FiatValue.Value:n2} {_Farm.TokenB.FiatValue.Symbol} /" +
-                $" {_Farm.TokenB.ChainValue.Value:n9} {_Farm.TokenB.ChainValue.Symbol}"
-            };
-
         ValueSymbol ICompounder.CurrentAPR => _Farm.CurrentAPR;
 
         ValueSymbol ICompounder.OptimalAPY => _Farm.OptimalAPY;
 
         int ICompounder.OptimalCompoundsPerYear => _Farm.OptimalCompoundsPerYear;
 
-        DateTimeOffset ICompounder.LastCompoundDateTime => _LastCompoundDateTime;
+        DateTimeOffset ICompounder.LastCompoundDateTime =>
+            new(_LastCompoundDateTime.Year,
+                _LastCompoundDateTime.Month,
+                _LastCompoundDateTime.Day,
+                _LastCompoundDateTime.Hour,
+                _LastCompoundDateTime.Minute,
+                _LastCompoundDateTime.Second,
+                _LastCompoundDateTime.Offset);
 
         TimeSpan ICompounder.LastCompoundProcessDuration => TimeSpan.FromSeconds(Math.Round(_LastProcessTimeTaken.TotalSeconds));
 
-        DateTimeOffset ICompounder.NextEstimateCompoundDateTime => _NextLoopDateTime;
+        DateTimeOffset ICompounder.NextEstimateCompoundDateTime =>
+            new(_NextLoopDateTime.Year,
+                _NextLoopDateTime.Month,
+                _NextLoopDateTime.Day,
+                _NextLoopDateTime.Hour,
+                _NextLoopDateTime.Minute,
+                _NextLoopDateTime.Second,
+                _NextLoopDateTime.Offset);
 
         ValueSymbol ICompounder.EstimateGasPerTxn => _EstimateGasPerTxn;
 
@@ -130,11 +100,102 @@ namespace Crypto_LP_Compounder
 
         TokenValue ICompounder.CurrentPendingReward => _Farm.CurrentPendingReward;
 
-        TokenValue ICompounder.TokenA => _Farm.TokenA;
+        SingleTokenValue ICompounder.TokenA => _Farm.TokenA;
 
-        TokenValue ICompounder.TokenB => _Farm.TokenB;
+        SingleTokenValue ICompounder.TokenB => _Farm.TokenB;
 
-        TokenValue ICompounder.Reward => _Farm.Reward;
+        SingleTokenValue ICompounder.Reward => _Farm.Reward;
+
+        #endregion
+
+        #region ISummary
+
+        string ISummary.InstanceName => _Settings.Name;
+
+        DateTimeOffset ISummary.LastUpdate =>
+            new(_LastUpdate.Year,
+                _LastUpdate.Month,
+                _LastUpdate.Day,
+                _LastUpdate.Hour,
+                _LastUpdate.Minute,
+                _LastUpdate.Second,
+                _LastUpdate.Offset);
+
+        string ISummary.CurrentAPR =>
+            $"{_Farm.CurrentAPR.Value.ToString(_Farm.CurrentAPR.Value < 1000 ? "n3" : "n0")} {_Farm.CurrentAPR.Symbol}" +
+            $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.CurrentAPR.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+            $" {_Farm.CurrentDeposit.ChainValue.Value * (_Farm.CurrentAPR.Value / 100):n9} {_Farm.CurrentDeposit.ChainValue.Symbol})";
+
+        string ISummary.OptimalAPY =>
+            $"{_Farm.OptimalAPY.Value.ToString(_Farm.OptimalAPY.Value < 1000 ? "n3" : "n0")} {_Farm.OptimalAPY.Symbol}" +
+            $" ({_Farm.CurrentDeposit.FiatValue.Value * (_Farm.OptimalAPY.Value / 100):n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+            $" {_Farm.CurrentDeposit.ChainValue.Value * (_Farm.OptimalAPY.Value / 100):n9} {_Farm.CurrentDeposit.ChainValue.Symbol})";
+
+        string ISummary.OptimalCompoundsPerYear => _Farm.OptimalCompoundsPerYear.ToString("n0");
+
+        DateTimeOffset ISummary.LastCompoundDateTime =>
+            new(_LastCompoundDateTime.Year,
+                _LastCompoundDateTime.Month,
+                _LastCompoundDateTime.Day,
+                _LastCompoundDateTime.Hour,
+                _LastCompoundDateTime.Minute,
+                _LastCompoundDateTime.Second,
+                _LastCompoundDateTime.Offset);
+
+        string ISummary.NextOptimalCompoundIn =>
+            $"{(_NextLoopDateTime - DateTimeOffset.Now).TotalDays:n0} d" +
+            $" {_NextLoopDateTime - DateTimeOffset.Now:hh' hr 'mm' min 'ss' sec'}" +
+            $" ({_NextLoopDateTime:yyyy-MM-ddTHH:mm:ssK})";
+
+        DateTimeOffset ISummary.NextOptimalCompoundDateTime =>
+            new(_NextLoopDateTime.Year,
+                _NextLoopDateTime.Month,
+                _NextLoopDateTime.Day,
+                _NextLoopDateTime.Hour,
+                _NextLoopDateTime.Minute,
+                _NextLoopDateTime.Second,
+                _NextLoopDateTime.Offset);
+
+        string ISummary.TotalLiquidity =>
+            $"{_Farm.CurrentDeposit.FiatValue.Value + _Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+            $" {_Farm.CurrentDeposit.ChainValue.Value + _Farm.CurrentPendingReward.ChainValue.Value:n9} {_Farm.CurrentDeposit.ChainValue.Symbol}";
+
+        string ISummary.PendingReward =>
+            $"{_Farm.CurrentPendingReward.Value.Value:n9} {_Farm.CurrentPendingReward.Value.Symbol}" +
+            $" ({_Farm.CurrentPendingReward.FiatValue.Value:n2} {_Farm.CurrentPendingReward.FiatValue.Symbol} /" +
+            $" {_Farm.CurrentPendingReward.ChainValue.Value:n9} {_Farm.CurrentPendingReward.ChainValue.Symbol})";
+
+        string ISummary.CurrentDeposit =>
+            $"{_Farm.CurrentDeposit.Value.Value:n9} {_Farm.CurrentDeposit.Value.Symbol}" +
+            $" ({_Farm.CurrentDeposit.FiatValue.Value:n2} {_Farm.CurrentDeposit.FiatValue.Symbol} /" +
+            $" {_Farm.CurrentDeposit.ChainValue.Value:n9} {_Farm.CurrentDeposit.ChainValue.Symbol})";
+
+        string ISummary.UnderlyingTokenA_Deposit =>
+            $"{_Farm.UnderlyingTokenA_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenA_Deposit.Value.Symbol}" +
+            $" ({_Farm.UnderlyingTokenA_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenA_Deposit.FiatValue.Symbol} /" +
+            $" {_Farm.UnderlyingTokenA_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenA_Deposit.ChainValue.Symbol})";
+
+        string ISummary.UnderlyingTokenB_Deposit =>
+            $"{_Farm.UnderlyingTokenB_Deposit.Value.Value:n9} {_Farm.UnderlyingTokenB_Deposit.Value.Symbol}" +
+            $" ({_Farm.UnderlyingTokenB_Deposit.FiatValue.Value:n2} {_Farm.UnderlyingTokenB_Deposit.FiatValue.Symbol} /" +
+            $" {_Farm.UnderlyingTokenB_Deposit.ChainValue.Value:n9} {_Farm.UnderlyingTokenB_Deposit.ChainValue.Symbol})";
+
+        string ISummary.RewardValue =>
+            $"{_Farm.Reward.Symbol}:" +
+            $" {_Farm.Reward.FiatValue.Value:n2} {_Farm.Reward.FiatValue.Symbol} /" +
+            $" {_Farm.Reward.ChainValue.Value:n9} {_Farm.Reward.ChainValue.Symbol}";
+
+        string ISummary.TokenA_Value =>
+            $"{_Farm.TokenA.Symbol}:" +
+            $" {_Farm.TokenA.FiatValue.Value:n2} {_Farm.TokenA.FiatValue.Symbol} /" +
+            $" {_Farm.TokenA.ChainValue.Value:n9} {_Farm.TokenA.ChainValue.Symbol}";
+
+        string ISummary.TokenB_Value =>
+            $"{_Farm.TokenB.Symbol}:" +
+            $" {_Farm.TokenB.FiatValue.Value:n2} {_Farm.TokenB.FiatValue.Symbol} /" +
+            $" {_Farm.TokenB.ChainValue.Value:n9} {_Farm.TokenB.ChainValue.Symbol}";
+
+        #endregion
 
         public Log Log { get; }
 

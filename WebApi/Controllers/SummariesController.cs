@@ -1,4 +1,4 @@
-/*
+﻿/*
    Copyright 2021 Lip Wee Yeo Amano
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,27 +19,27 @@ using Microsoft.AspNetCore.Mvc;
 namespace WebApi.Controllers
 {
     [ApiController]
-    [Route("api/instance")]
-    public class InstancesController : ControllerBase
+    [Route("api/summary")]
+    public class SummariesController : ControllerBase
     {
-        public InstancesController(ILogger<InstancesController> _)
+        public SummariesController(ILogger<SummariesController> _)
         {
         }
 
         [HttpGet]
-        public IEnumerable<DTO.ICompounder> Get()
+        public IEnumerable<DTO.ISummary> Get()
         {
-            return Program.GetInstances?.Invoke();
+            return Program.GetSummaries?.Invoke();
         }
 
         [HttpGet("{id}")]
         public IActionResult Get(string id)
         {
-            DTO.ICompounder instance =
-                Program.GetInstances?.Invoke()?
+            DTO.ISummary summary =
+                Program.GetSummaries?.Invoke()?
                 .FirstOrDefault(s => s.InstanceName.Equals(id, StringComparison.OrdinalIgnoreCase));
 
-            return instance == null ? NotFound() : Ok(new[] { instance });
+            return summary == null ? NotFound() : Ok(new[] { summary });
         }
     }
 }

@@ -16,13 +16,16 @@
 
 namespace DTO
 {
-    public class TokenValue : BaseValue
+    public abstract class BaseValue
     {
-        public ValueSymbol Value { get; }
+        public ValueSymbol ChainValue { get; }
 
-        public TokenValue() : base()
+        public ValueSymbol FiatValue { get; }
+
+        public BaseValue()
         {
-            Value = new();
+            ChainValue = new();
+            FiatValue = new();
         }
     }
 }

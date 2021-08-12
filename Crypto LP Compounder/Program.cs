@@ -39,6 +39,8 @@ namespace Crypto_LP_Compounder
 
         private static readonly Func<ICompounder[]> _GetAllCompounders = () => _Compounders?.OfType<ICompounder>().ToArray();
 
+        private static readonly Func<ISummary[]> _GetAllSummaries = () => _Compounders?.OfType<ISummary>().ToArray();
+
         private static volatile bool _IsPause;
 
         private static volatile bool _IsTerminate;
@@ -127,7 +129,7 @@ namespace Crypto_LP_Compounder
             LogLineConsole();
             LogLineConsole("Starting Web API...");
             _ = WebApi.Program
-                .Start(_Settings.WebApiURL, _GetAllCompounders, args)
+                .Start(_Settings.WebApiURL, _GetAllCompounders, _GetAllSummaries, args)
                 .ContinueWith(async t =>
                 {
                     if (t.IsFaulted)

@@ -1,4 +1,5 @@
 .vs/
 obj/
 bin/
+*.user
 Crypto Crypt.dll

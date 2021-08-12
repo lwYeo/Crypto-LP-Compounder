@@ -22,9 +22,16 @@ namespace WebApi
     {
         internal static Func<ICompounder[]> GetInstances { get; private set; }
 
-        public static async Task Start(string webApiUrl, Func<ICompounder[]> getInstances, string[] args)
+        internal static Func<ISummary[]> GetSummaries { get; private set; }
+
+        public static async Task Start(
+            string webApiUrl,
+            Func<ICompounder[]> getInstances,
+            Func<ISummary[]> getSummaries,
+            string[] args)
         {
             GetInstances = getInstances;
+            GetSummaries = getSummaries;
 
             IHost host = Host
                 .CreateDefaultBuilder(args)

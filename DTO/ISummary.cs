@@ -18,7 +18,7 @@ using System.Text.Json.Serialization;
 
 namespace DTO
 {
-    public interface ICompounder
+    public interface ISummary
     {
         [JsonPropertyOrder(0)]
         string InstanceName { get; }
@@ -27,45 +27,45 @@ namespace DTO
         DateTimeOffset LastUpdate { get; }
 
         [JsonPropertyOrder(2)]
-        ValueSymbol CurrentAPR { get; }
+        string CurrentAPR { get; }
 
         [JsonPropertyOrder(3)]
-        ValueSymbol OptimalAPY { get; }
+        string OptimalAPY { get; }
 
         [JsonPropertyOrder(4)]
-        int OptimalCompoundsPerYear { get; }
+        string OptimalCompoundsPerYear { get; }
 
         [JsonPropertyOrder(5)]
         DateTimeOffset LastCompoundDateTime { get; }
 
         [JsonPropertyOrder(6)]
-        TimeSpan LastCompoundProcessDuration { get; }
+        string NextOptimalCompoundIn { get; }
 
         [JsonPropertyOrder(7)]
-        DateTimeOffset NextEstimateCompoundDateTime { get; }
+        DateTimeOffset NextOptimalCompoundDateTime { get; }
 
         [JsonPropertyOrder(8)]
-        ValueSymbol EstimateGasPerTxn { get; }
+        string TotalLiquidity { get; }
 
         [JsonPropertyOrder(9)]
-        TokenValue CurrentDeposit { get; }
+        string PendingReward { get; }
 
         [JsonPropertyOrder(10)]
-        TokenValue UnderlyingTokenA_Deposit { get; }
+        string CurrentDeposit { get; }
 
         [JsonPropertyOrder(11)]
-        TokenValue UnderlyingTokenB_Deposit { get; }
+        string UnderlyingTokenA_Deposit { get; }
 
         [JsonPropertyOrder(12)]
-        TokenValue CurrentPendingReward { get; }
+        string UnderlyingTokenB_Deposit { get; }
 
         [JsonPropertyOrder(13)]
-        SingleTokenValue TokenA { get; }
+        string RewardValue { get; }
 
         [JsonPropertyOrder(14)]
-        SingleTokenValue TokenB { get; }
+        string TokenA_Value { get; }
 
         [JsonPropertyOrder(15)]
-        SingleTokenValue Reward { get; }
+        string TokenB_Value { get; }
     }
 }
