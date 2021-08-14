@@ -19,6 +19,7 @@ namespace Crypto_LP_Compounder
     internal class Log
     {
         private readonly bool _IsLogAll;
+        private readonly int _DeleteLogAfterDays;
         private readonly string _InstanceName;
 
         private string _LogFileName;
@@ -35,6 +36,7 @@ namespace Crypto_LP_Compounder
         public Log(Settings.CompounderSettings settings)
         {
             _IsLogAll = settings.IsLogAll;
+            _DeleteLogAfterDays = (int)settings.DeleteLogsAfterDays;
             _InstanceName = settings.Name;
             _RecentDate = DateTime.Today.AddDays(-1);
             _LogQueue = new();
@@ -59,6 +61,8 @@ namespace Crypto_LP_Compounder
                 {
                     _LogProcessStream?.Dispose();
                     _LogStream?.Dispose();
+
+                    DeleteOldLogs();
 
                     _LogFileName = GetLogFileName(DateTime.Today);
                     _LogProcessFileName = GetProcessLogFileName(DateTime.Today);
@@ -127,6 +131,35 @@ namespace Crypto_LP_Compounder
             }
 
             return logs ?? Array.Empty<string>();
+        }
+
+        private void DeleteOldLogs()
+        {
+            if (_DeleteLogAfterDays < 1) return;
+
+            string[] foundLogs = Directory.GetFiles(AppContext.BaseDirectory, "*.log");
+
+            string[] logsToKeep =
+                Enumerable.Range(0, _DeleteLogAfterDays)
+                .Select(i => GetLogFileName(DateTime.Today.AddDays(i)))
+                .Concat(
+                    Enumerable.Range(0, _DeleteLogAfterDays)
+                    .Select(i => GetProcessLogFileName(DateTime.Today.AddDays(i))))
+                .ToArray();
+
+            string[] logsToDelete = foundLogs.Except(logsToKeep).ToArray();
+
+            foreach (string log in logsToDelete)
+            {
+                try
+                {
+                    File.Delete(log);
+                }
+                catch (Exception ex)
+                {
+                    Program.LogLineConsole(ex.ToString());
+                }
+            }
         }
     }
 }

@@ -343,6 +343,8 @@ namespace Crypto_LP_Compounder.Settings
 
         public bool IsLogAll { get; set; } = true;
 
+        public uint DeleteLogsAfterDays { get; set; } = 60;
+
         public string RPC_URL { get; set; } = string.Empty;
 
         public uint RPC_Timeout { get; set; } = 120;

@@ -1,6 +1,7 @@
 {
   "Name": "WBNB-MOMA_MOMA",
   "IsLogAll": true,
+  "DeleteLogsAfterDays": 60,
   "RPC_URL": "https://bsc-dataseed1.binance.org/",
   "RPC_Timeout": 120,
   "RPC_ChainID": 56,

@@ -1,6 +1,7 @@
 {
   "Name": "WFTM-TOMB_TSHARE",
   "IsLogAll": true,
+  "DeleteLogsAfterDays": 60,
   "RPC_URL": "https://rpc.fantom.network/",
   "RPC_Timeout": 120,
   "RPC_ChainID": 250,
