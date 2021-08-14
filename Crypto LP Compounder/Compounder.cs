@@ -106,6 +106,10 @@ namespace Crypto_LP_Compounder
 
         SingleTokenValue ICompounder.Reward => _Farm.Reward;
 
+        string[] ICompounder.GetRecentAllLogs() => Log?.ReadRecentLogFile();
+
+        string[] ICompounder.GetRecentProcessLogs() => Log?.ReadRecentProcessLogFile();
+
         #endregion
 
         #region ISummary

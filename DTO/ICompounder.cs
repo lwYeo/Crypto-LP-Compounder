@@ -67,5 +67,9 @@ namespace DTO
 
         [JsonPropertyOrder(15)]
         SingleTokenValue Reward { get; }
+
+        string[] GetRecentAllLogs();
+
+        string[] GetRecentProcessLogs();
     }
 }

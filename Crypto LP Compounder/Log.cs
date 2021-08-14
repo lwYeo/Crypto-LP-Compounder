@@ -40,6 +40,12 @@ namespace Crypto_LP_Compounder
             _LogQueue = new();
         }
 
+        public string[] ReadRecentLogFile() =>
+            ReadRecentLogFile((DateTime dateTime) => GetLogFileName(dateTime));
+
+        public string[] ReadRecentProcessLogFile() =>
+            ReadRecentLogFile((DateTime dateTime) => GetProcessLogFileName(dateTime));
+
         public async Task FlushLogsAsync()
         {
             while (_LogQueue.TryPeek(out _)) await Task.Delay(100);
@@ -54,11 +60,8 @@ namespace Crypto_LP_Compounder
                     _LogProcessStream?.Dispose();
                     _LogStream?.Dispose();
 
-                    _LogFileName =
-                        Path.Combine(AppContext.BaseDirectory, $"{_InstanceName}_{DateTime.Today:yyyy-MM-dd}.log");
-
-                    _LogProcessFileName =
-                        Path.Combine(AppContext.BaseDirectory, $"{_InstanceName}_{DateTime.Today:yyyy-MM-dd}_Process.log");
+                    _LogFileName = GetLogFileName(DateTime.Today);
+                    _LogProcessFileName = GetProcessLogFileName(DateTime.Today);
 
                     _LogProcessStream =
                         new StreamWriter(new FileStream(_LogProcessFileName, FileMode.Append, FileAccess.Write, FileShare.ReadWrite));
@@ -100,6 +103,30 @@ namespace Crypto_LP_Compounder
         public void WriteLineBreak()
         {
             WriteLine(Program.GetLineBreak());
+        }
+
+        private string GetLogFileName(DateTime datetime) =>
+            Path.Combine(AppContext.BaseDirectory, $"{_InstanceName}_{datetime:yyyy-MM-dd}.log");
+
+        private string GetProcessLogFileName(DateTime datetime) =>
+            Path.Combine(AppContext.BaseDirectory, $"{_InstanceName}_{datetime:yyyy-MM-dd}_Process.log");
+
+        private string[] ReadRecentLogFile(Func<DateTime, string> getFilePath)
+        {
+            string[] logs = null;
+            DateTime lastDate = DateTime.Today.AddDays(1);
+
+            while (!(logs?.Any() ?? false))
+            {
+                lastDate = lastDate.AddDays(-1);
+                string filePath = getFilePath.Invoke(lastDate);
+
+                if (!File.Exists(filePath)) break;
+
+                logs = File.ReadAllLines(filePath).Reverse().ToArray();
+            }
+
+            return logs ?? Array.Empty<string>();
         }
     }
 }
