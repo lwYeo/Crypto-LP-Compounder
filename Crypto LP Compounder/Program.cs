@@ -103,7 +103,11 @@ namespace Crypto_LP_Compounder
         {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 
-            Console.Title = $"{GetApplicationName()} {GetApplicationVersion()} by {GetCompanyName()} ({GetApplicationYear()})";
+            string appTitle = $"{GetApplicationName()} {GetApplicationVersion()}";
+
+            Console.Title = $"{appTitle} by {GetCompanyName()} ({GetApplicationYear()})";
+
+            Console.WriteLine($"Starting {appTitle}");
 
             int originalConsoleMode = 0;
 

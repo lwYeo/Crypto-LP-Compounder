@@ -55,6 +55,8 @@ namespace Crypto_LP_Compounder
 
         public void Write(string log)
         {
+            Program.LogConsole($"[{_InstanceName}] {log}");
+
             try
             {
                 if (_RecentDate != DateTime.Today)
@@ -68,11 +70,27 @@ namespace Crypto_LP_Compounder
                     _LogProcessFileName = GetProcessLogFileName(DateTime.Today);
 
                     _LogProcessStream =
-                        new StreamWriter(new FileStream(_LogProcessFileName, FileMode.Append, FileAccess.Write, FileShare.ReadWrite));
+                        new StreamWriter(
+                            new FileStream(
+                                _LogProcessFileName,
+                                File.Exists(_LogProcessFileName) ? FileMode.Append : FileMode.Create,
+                                FileAccess.Write,
+                                FileShare.ReadWrite,
+                                1024,
+                                FileOptions.WriteThrough));
 
                     if (_IsLogAll)
+                    {
                         _LogStream =
-                            new StreamWriter(new FileStream(_LogFileName, FileMode.Append, FileAccess.Write, FileShare.ReadWrite));
+                            new StreamWriter(
+                                new FileStream(
+                                    _LogFileName,
+                                    File.Exists(_LogProcessFileName) ? FileMode.Append : FileMode.Create,
+                                    FileAccess.Write,
+                                    FileShare.ReadWrite,
+                                    1024,
+                                    FileOptions.WriteThrough));
+                    }
 
                     _RecentDate = DateTime.Today;
                 }
@@ -85,8 +103,6 @@ namespace Crypto_LP_Compounder
 
                 _LogStream?.Write(log);
                 _LogStream?.Flush();
-
-                Program.LogConsole($"[{_InstanceName}] {log}");
             }
             catch (Exception ex)
             {
@@ -127,17 +143,28 @@ namespace Crypto_LP_Compounder
 
                 if (!File.Exists(filePath)) break;
 
-                logs = File.ReadAllLines(filePath).Reverse().ToArray();
+                logs = ReadLines(filePath).ToArray();
             }
 
             return logs ?? Array.Empty<string>();
+        }
+
+        private IEnumerable<string> ReadLines(string filePath)
+        {
+            using FileStream stream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using StreamReader reader = new(stream);
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                yield return line;
+            }
         }
 
         private void DeleteOldLogs()
         {
             if (_DeleteLogAfterDays < 1) return;
 
-            string[] foundLogs = Directory.GetFiles(AppContext.BaseDirectory, "*.log");
+            string[] foundLogs = Directory.GetFiles(AppContext.BaseDirectory, $"{_InstanceName}_*.log");
 
             string[] logsToKeep =
                 Enumerable.Range(0, _DeleteLogAfterDays)
@@ -153,6 +180,7 @@ namespace Crypto_LP_Compounder
             {
                 try
                 {
+                    Program.LogLineConsole($"Deleting log file: {log}");
                     File.Delete(log);
                 }
                 catch (Exception ex)
