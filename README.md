@@ -35,5 +35,8 @@ Currently only the following has been implemented for, if you have any tokens to
 - WBNB-MOMA (MOMA)
 
 Please refer to the examples found in the sample settings files.  
-Default web API can be accessed from http://127.0.0.1:5050/api/instance or http://127.0.0.1:5050/api/summary  
-(URL can be changed in settings.json file)
+Default web API can be accessed from the following (URL can be changed in settings.json file)
+- http://127.0.0.1:5050/api/instance
+- http://127.0.0.1:5050/api/summary
+- http://127.0.0.1:5050/api/log/all/{instance_name}
+- http://127.0.0.1:5050/api/log/process/{instance_name}
