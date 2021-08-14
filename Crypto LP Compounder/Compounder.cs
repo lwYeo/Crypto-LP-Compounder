@@ -144,8 +144,7 @@ namespace Crypto_LP_Compounder
 
         string ISummary.NextOptimalCompoundIn =>
             $"{(_NextLoopDateTime - DateTimeOffset.Now).TotalDays:n0} d" +
-            $" {_NextLoopDateTime - DateTimeOffset.Now:hh' hr 'mm' min 'ss' sec'}" +
-            $" ({_NextLoopDateTime:yyyy-MM-ddTHH:mm:ssK})";
+            $" {_NextLoopDateTime - DateTimeOffset.Now:hh' hr 'mm' min 'ss' sec'}";
 
         DateTimeOffset ISummary.NextOptimalCompoundDateTime =>
             new(_NextLoopDateTime.Year,

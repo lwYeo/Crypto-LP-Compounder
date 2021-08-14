@@ -203,37 +203,43 @@ namespace Crypto_LP_Compounder
 
         internal static void EnableQuickEdit()
         {
-            IntPtr conHandle = GetStdHandle(STD_INPUT_HANDLE);
-
-            if (!GetConsoleMode(conHandle, out int mode))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // error getting the console mode. Exit.
-                return;
-            }
+                IntPtr conHandle = GetStdHandle(STD_INPUT_HANDLE);
 
-            mode |= (QuickEditMode | ExtendedFlags);
+                if (!GetConsoleMode(conHandle, out int mode))
+                {
+                    // error getting the console mode. Exit.
+                    return;
+                }
 
-            if (!SetConsoleMode(conHandle, mode))
-            {
-                // error setting console mode.
+                mode |= (QuickEditMode | ExtendedFlags);
+
+                if (!SetConsoleMode(conHandle, mode))
+                {
+                    // error setting console mode.
+                }
             }
         }
 
         internal static void DisableQuickEdit()
         {
-            IntPtr conHandle = GetStdHandle(STD_INPUT_HANDLE);
-
-            if (!GetConsoleMode(conHandle, out int mode))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // error getting the console mode. Exit.
-                return;
-            }
+                IntPtr conHandle = GetStdHandle(STD_INPUT_HANDLE);
 
-            mode &= ~(QuickEditMode | ExtendedFlags);
+                if (!GetConsoleMode(conHandle, out int mode))
+                {
+                    // error getting the console mode. Exit.
+                    return;
+                }
 
-            if (!SetConsoleMode(conHandle, mode))
-            {
-                // error setting console mode.
+                mode &= ~(QuickEditMode | ExtendedFlags);
+
+                if (!SetConsoleMode(conHandle, mode))
+                {
+                    // error setting console mode.
+                }
             }
         }
 
