@@ -689,20 +689,28 @@ namespace Crypto_LP_Compounder
                     return false;
                 }
 
-                List<EventLog<DTO.ERC20.TransferEventDTO>> transferEvents = _Web3.Eth.
-                    GetEvent<DTO.ERC20.TransferEventDTO>().
-                    DecodeAllEventsForEvent(topUpGasReceipt.Logs);
+                List<EventLog<DTO.ERC20.TransferEventDTO>> transferEvents =
+                    _Web3.Eth
+                    .GetEvent<DTO.ERC20.TransferEventDTO>()
+                    .DecodeAllEventsForEvent(topUpGasReceipt.Logs);
 
-                List<EventLog<DTO.ERC20.TransferEventDTO>> transferOutEvents = transferEvents.
-                    Where(e => e.Event.From.Equals(_Settings.Wallet.Address, StringComparison.OrdinalIgnoreCase)).
-                    ToList();
+                List<EventLog<DTO.ERC20.TransferEventDTO>> transferOutEvents =
+                    transferEvents
+                    .Where(e => e.Event.From.Equals(_Settings.Wallet.Address, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
 
-                List<EventLog<DTO.ERC20.TransferEventDTO>> transferInEvents = transferEvents.
-                    Where(e => e.Event.To.Equals(BurnAddress, StringComparison.OrdinalIgnoreCase)).
-                    ToList();
+                List<EventLog<DTO.ERC20.TransferEventDTO>> transferInEvents =
+                    transferEvents
+                    .Where(e => e.Event.To.Equals(BurnAddress, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
 
                 if (transferOutEvents.Any())
                     rewardHarvestAmt -= transferOutEvents.Select(l => l.Event.Value).Aggregate((currentSum, item) => currentSum + item);
+
+                if (!transferInEvents.Any())
+                    transferInEvents.AddRange(
+                        transferEvents
+                        .Where(e => e.Event.From.Equals(_Settings.LiquidityPool.LP_Contract, StringComparison.OrdinalIgnoreCase)));
 
                 if (transferInEvents.Any())
                 {
