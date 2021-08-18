@@ -168,10 +168,10 @@ namespace Crypto_LP_Compounder
 
             string[] logsToKeep =
                 Enumerable.Range(0, _DeleteLogAfterDays)
-                .Select(i => GetLogFileName(DateTime.Today.AddDays(i)))
+                .Select(i => GetLogFileName(DateTime.Today.AddDays(-i)))
                 .Concat(
                     Enumerable.Range(0, _DeleteLogAfterDays)
-                    .Select(i => GetProcessLogFileName(DateTime.Today.AddDays(i))))
+                    .Select(i => GetProcessLogFileName(DateTime.Today.AddDays(-i))))
                 .ToArray();
 
             string[] logsToDelete = foundLogs.Except(logsToKeep).ToArray();
